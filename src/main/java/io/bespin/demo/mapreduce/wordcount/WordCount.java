@@ -1,4 +1,4 @@
-package io.bespin.demo.wordcount;
+package io.bespin.demo.mapreduce.wordcount;
 
 import java.io.IOException;
 import java.util.Iterator;
