@@ -1,7 +1,11 @@
 package io.bespin.demo.spark.wordcount;
 
+import java.util.StringTokenizer
+
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
+
+import scala.collection.JavaConversions._
 
 object WordCount {
   val usage = """
@@ -18,7 +22,7 @@ object WordCount {
     val sc = new SparkContext(conf)
     val textFile = sc.textFile(args(0))
     val counts = textFile
-      .flatMap(line => line.trim.split("\\s+").filter(x => x.length > 1))
+      .flatMap(line => new StringTokenizer(line).toList)
       .map(word => (word, 1))
       .reduceByKey(_ + _)
     counts.saveAsTextFile(args(1))
