@@ -24,7 +24,9 @@ object BigramCount {
     val counts = textFile
       .flatMap(line => {
         val tokens = new StringTokenizer(line).toList
-        if (tokens.length>1) tokens.sliding(2).map(p => p.mkString(" ")).toList else List()
+          .map(_.asInstanceOf[String].toLowerCase().replaceAll("^[^a-z]+", "").replaceAll("[^a-z]+$", ""))
+          .filter(_.length != 0)
+        if (tokens.length > 1) tokens.sliding(2).map(p => p.mkString(" ")).toList else List()
       })
       .map(bigram => (bigram, 1))
       .reduceByKey(_ + _)

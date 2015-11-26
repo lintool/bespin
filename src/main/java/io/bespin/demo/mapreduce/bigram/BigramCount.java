@@ -1,7 +1,9 @@
 package io.bespin.demo.mapreduce.bigram;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
@@ -37,19 +39,20 @@ public class BigramCount extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = value.toString();
+      String line = ((Text) value).toString();
 
-      String prev = null;
+      List<String> tokens = new ArrayList<String>();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
-        String cur = itr.nextToken();
+        String w = itr.nextToken().toLowerCase().replaceAll("^[^a-z]+", "").replaceAll("[^a-z]+$", "");
+        if (w.length() == 0) continue;
+        tokens.add(w);
+      }
 
-        // Emit only if we have an actual bigram.
-        if (prev != null) {
-          BIGRAM.set(prev + " " + cur);
-          context.write(BIGRAM, ONE);
-        }
-        prev = cur;
+      if (tokens.size() < 2) return;
+      for (int i = 1; i < tokens.size(); i++) {
+        BIGRAM.set(tokens.get(i - 1) + " " + tokens.get(i));
+        context.write(BIGRAM, ONE);
       }
     }
   }
