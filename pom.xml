@@ -130,6 +130,11 @@
       <artifactId>args4j</artifactId>
       <version>2.32</version>
     </dependency>
+    <dependency>
+      <groupId>tl.lin</groupId>
+      <artifactId>lintools-datatypes</artifactId>
+      <version>1.0.0</version>
+    </dependency>
 
     <dependency>
       <groupId>org.scala-lang</groupId>
