@@ -44,7 +44,7 @@ public class BigramCount extends Configured implements Tool {
       List<String> tokens = new ArrayList<String>();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("^[^a-z]+", "").replaceAll("[^a-z]+$", "");
+        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
         if (w.length() == 0) continue;
         tokens.add(w);
       }

@@ -23,7 +23,7 @@ object WordCount {
     val textFile = sc.textFile(args(0))
     val counts = textFile
       .flatMap(line => new StringTokenizer(line).toList
-        .map(_.asInstanceOf[String].toLowerCase().replaceAll("^[^a-z]+", "").replaceAll("[^a-z]+$", ""))
+        .map(_.asInstanceOf[String].toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", ""))
         .filter(_.length != 0))
       .map(word => (word, 1))
       .reduceByKey(_ + _)
