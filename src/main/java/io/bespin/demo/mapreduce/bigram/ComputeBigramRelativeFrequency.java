@@ -144,7 +144,7 @@ public class ComputeBigramRelativeFrequency  extends Configured implements Tool 
       return -1;
     }
 
-    LOG.info("Tool name: " + BigramCount.class.getSimpleName());
+    LOG.info("Tool name: " + ComputeBigramRelativeFrequency.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
