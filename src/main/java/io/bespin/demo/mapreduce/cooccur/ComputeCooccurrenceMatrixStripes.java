@@ -2,18 +2,10 @@ package io.bespin.demo.mapreduce.cooccur;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -27,6 +19,10 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.map.HMapStIW;
 
@@ -104,72 +100,55 @@ public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool
    */
   public ComputeCooccurrenceMatrixStripes() {}
 
-  private static final String INPUT = "input";
-  private static final String OUTPUT = "output";
-  private static final String WINDOW = "window";
-  private static final String NUM_REDUCERS = "numReducers";
+  public static class Args {
+    @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
+    public String input;
+
+    @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
+    public String output;
+
+    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
+    public int numReducers = 1;
+
+    @Option(name = "-window", metaVar = "[num]", required = false, usage = "cooccurrence window")
+    public int window = 2;
+  }
 
   /**
    * Runs this tool.
    */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
-
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("window size").create(WINDOW));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of reducers").create(NUM_REDUCERS));
-
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+  public int run(String[] argv) throws Exception {
+    Args args = new Args();
+    CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
+      parser.parseArgument(argv);
+    } catch (CmdLineException e) {
+      System.err.println(e.getMessage());
+      parser.printUsage(System.err);
       return -1;
     }
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
-
-    String inputPath = cmdline.getOptionValue(INPUT);
-    String outputPath = cmdline.getOptionValue(OUTPUT);
-    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
-        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
-    int window = cmdline.hasOption(WINDOW) ? Integer.parseInt(cmdline.getOptionValue(WINDOW)) : 2;
-
-    LOG.info("Tool: " + ComputeCooccurrenceMatrixStripes.class.getSimpleName());
-    LOG.info(" - input path: " + inputPath);
-    LOG.info(" - output path: " + outputPath);
-    LOG.info(" - window: " + window);
-    LOG.info(" - number of reducers: " + reduceTasks);
+    LOG.info("Tool: " + ComputeCooccurrenceMatrixPairs.class.getSimpleName());
+    LOG.info(" - input path: " + args.input);
+    LOG.info(" - output path: " + args.output);
+    LOG.info(" - window: " + args.window);
+    LOG.info(" - number of reducers: " + args.numReducers);
 
     Job job = Job.getInstance(getConf());
     job.setJobName(ComputeCooccurrenceMatrixStripes.class.getSimpleName());
     job.setJarByClass(ComputeCooccurrenceMatrixStripes.class);
 
     // Delete the output directory if it exists already.
-    Path outputDir = new Path(outputPath);
+    Path outputDir = new Path(args.output);
     FileSystem.get(getConf()).delete(outputDir, true);
 
-    job.getConfiguration().setInt("window", window);
+    job.getConfiguration().setInt("window", args.window);
 
-    job.setNumReduceTasks(reduceTasks);
+    job.setNumReduceTasks(args.numReducers);
 
-    FileInputFormat.setInputPaths(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+    FileInputFormat.setInputPaths(job, new Path(args.input));
+    FileOutputFormat.setOutputPath(job, new Path(args.output));
 
     job.setMapOutputKeyClass(Text.class);
     job.setMapOutputValueClass(HMapStIW.class);
