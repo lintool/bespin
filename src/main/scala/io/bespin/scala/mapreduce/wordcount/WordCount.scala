@@ -5,6 +5,9 @@ import io.bespin.scala.util.WritableConversions
 
 import java.util.StringTokenizer
 
+import scala.collection.JavaConversions._
+import scala.collection.mutable._
+
 import org.apache.hadoop.conf._
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
@@ -13,20 +16,36 @@ import org.apache.hadoop.mapreduce.lib.input._
 import org.apache.hadoop.mapreduce.lib.output._
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j._
 
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
+import org.rogach.scallop._
 
-import scala.collection.JavaConversions._
+class Conf(args: Seq[String]) extends ScallopConf(args) {
+  mainOptions = Seq(input, output, reducers)
+  val input = opt[String](descr = "input path", required = true)
+  val output = opt[String](descr = "output path", required = true)
+  val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
+  val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
+}
 
 object WordCount extends Configured with Tool with WritableConversions with Tokenizer {
-  val usage = """
-    Usage: hadoop jar target/bespin.jar io.bespin.scala.mapreduce.wordcount.WordCount [input] [output]
-  """
+  val log = Logger.getLogger(getClass().getName());
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
       tokenize(value).foreach(word => context.write(word, 1))
+    }
+  }
+
+  class MyMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
+    val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
+
+    override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      tokenize(value.toString).foreach(word => counts.put(word, counts(word) + 1))
+    }
+
+    override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      counts.foreach({ case (k, v) => context.write(k, v) })
     }
   }
 
@@ -36,17 +55,19 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     }
   }
 
-  override def run(args: Array[String]) : Int = {
+  override def run(argv: Array[String]) : Int = {
+    val args = new Conf(argv)
+
+    log.info("Input: " + args.input())
+    log.info("Output: " + args.output())
+    log.info("Number of reducers: " + args.reducers())
+    log.info("Use in-mapper combining: " + args.imc())
+
     val conf = getConf();
     val job = Job.getInstance(conf);
 
-    val mapper = new MyMapper
-
-    println("Input: " + args(0))
-    println("Output: " + args(1))
-
-    FileInputFormat.addInputPath(job, new Path(args(0)))
-    FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    FileInputFormat.addInputPath(job, new Path(args.input()))
+    FileOutputFormat.setOutputPath(job, new Path(args.output()))
 
     job.setMapOutputKeyClass(classOf[Text])
     job.setMapOutputValueClass(classOf[IntWritable])
@@ -54,12 +75,15 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     job.setOutputValueClass(classOf[IntWritable])
     job.setOutputFormatClass(classOf[TextOutputFormat[Text, IntWritable]])
 
-    job.setMapperClass(classOf[MyMapper])
+    job.setMapperClass(if (args.imc()) classOf[MyMapper] else classOf[MyMapperIMC])
+    if (!args.imc()) job.setCombinerClass(classOf[MyReducer])
     job.setReducerClass(classOf[MyReducer])
+
+    job.setNumReduceTasks(args.reducers());
 
     job.waitForCompletion(true);
 
-    -1
+    return 0
   }
 
   def main(args: Array[String]) {
