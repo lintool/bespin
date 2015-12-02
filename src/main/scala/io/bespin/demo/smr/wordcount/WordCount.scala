@@ -1,6 +1,7 @@
 package io.bespin.demo.smr.wordcount;
 
 import io.bespin.demo.Tokenizer
+import io.bespin.demo.WritableConversions
 
 import java.util.StringTokenizer
 
@@ -18,21 +19,20 @@ import org.apache.spark.SparkConf
 
 import scala.collection.JavaConversions._
 
-object WordCount extends Configured with Tool with Tokenizer {
+object WordCount extends Configured with Tool with WritableConversions with Tokenizer {
   val usage = """
     Usage: hadoop jar target/bespin.jar io.bespin.demo.smr.wordcount.WordCount [input] [output]
   """
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
-      tokenize(value.toString).foreach(word => context.write(new Text(word), new IntWritable(1)))
+      tokenize(value.toString).foreach(word => context.write(word, 1))
     }
   }
 
   class MyReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: java.lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
-      val sum = values.foldLeft(0)((a: Int, b: IntWritable) => a + b.get())
-      context.write(key, new IntWritable(sum));
+      context.write(key, values.reduceLeft((a, b) => a + b));
     }
   }
 
