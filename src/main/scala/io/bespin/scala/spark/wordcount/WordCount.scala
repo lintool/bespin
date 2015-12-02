@@ -1,13 +1,13 @@
 package io.bespin.scala.spark.wordcount;
 
-import java.util.StringTokenizer
+import io.bespin.scala.util.Tokenizer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 
 import scala.collection.JavaConversions._
 
-object WordCount {
+object WordCount extends Tokenizer {
   val usage = """
     Usage: spark-submit --class io.bespin.scala.spark.wordcount.WordCount target/bespin.jar [input] [output]
   """
@@ -22,9 +22,7 @@ object WordCount {
     val sc = new SparkContext(conf)
     val textFile = sc.textFile(args(0))
     val counts = textFile
-      .flatMap(line => new StringTokenizer(line).toList
-        .map(_.asInstanceOf[String].toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", ""))
-        .filter(_.length != 0))
+      .flatMap(line => tokenize(line))
       .map(word => (word, 1))
       .reduceByKey(_ + _)
     counts.saveAsTextFile(args(1))
