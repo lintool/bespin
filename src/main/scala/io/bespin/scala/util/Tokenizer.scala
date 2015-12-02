@@ -1,4 +1,4 @@
-package io.bespin.demo;
+package io.bespin.scala.util;
 
 import java.util.StringTokenizer
 

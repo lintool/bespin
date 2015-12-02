@@ -1,7 +1,7 @@
-package io.bespin.demo.smr.wordcount;
+package io.bespin.scala.mapreduce.wordcount;
 
-import io.bespin.demo.Tokenizer
-import io.bespin.demo.WritableConversions
+import io.bespin.scala.util.Tokenizer
+import io.bespin.scala.util.WritableConversions
 
 import java.util.StringTokenizer
 
@@ -18,15 +18,22 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable._
 
-object WordCount extends Configured with Tool with WritableConversions with Tokenizer {
+object WordCountIMC extends Configured with Tool with WritableConversions with Tokenizer {
   val usage = """
-    Usage: hadoop jar target/bespin.jar io.bespin.demo.smr.wordcount.WordCount [input] [output]
+    Usage: hadoop jar target/bespin.jar io.bespin.scala.mapreduce.wordcount.WordCountIMC [input] [output]
   """
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
+    val counts = new HashMap[String, Int]()  { override def default(key: String) = 0 }
+
     override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
-      tokenize(value).foreach(word => context.write(word, 1))
+      tokenize(value.toString).foreach(word => counts.put(word, counts(word) + 1))
+    }
+
+    override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      counts.foreach({ case (k, v) => context.write(k, v) })
     }
   }
 
