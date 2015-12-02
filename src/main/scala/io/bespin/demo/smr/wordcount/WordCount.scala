@@ -26,7 +26,7 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
-      tokenize(value.toString).foreach(word => context.write(word, 1))
+      tokenize(value).foreach(word => context.write(word, 1))
     }
   }
 
