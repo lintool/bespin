@@ -14,10 +14,9 @@ import org.apache.hadoop.io._
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input._
 import org.apache.hadoop.mapreduce.lib.output._
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.util.Tool
+import org.apache.hadoop.util.ToolRunner
 import org.apache.log4j._
-
 import org.rogach.scallop._
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
@@ -81,7 +80,12 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
 
     job.setNumReduceTasks(args.reducers());
 
+    val outputDir = new Path(args.output());
+    FileSystem.get(conf).delete(outputDir, true);
+
+    val startTime = System.currentTimeMillis();
     job.waitForCompletion(true);
+    log.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
     return 0
   }

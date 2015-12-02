@@ -2,29 +2,44 @@ package io.bespin.scala.spark.wordcount;
 
 import io.bespin.scala.util.Tokenizer
 
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
-
 import scala.collection.JavaConversions._
 
-object WordCount extends Tokenizer {
-  val usage = """
-    Usage: spark-submit --class io.bespin.scala.spark.wordcount.WordCount target/bespin.jar [input] [output]
-  """
+import org.apache.log4j._
+import org.apache.hadoop.fs._
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkConf
+import org.rogach.scallop._
 
-  def main(args: Array[String]) {
-    if (args.length == 0) {
-      println(usage)
-      System.exit(-1);
-    }
+class Conf(args: Seq[String]) extends ScallopConf(args) {
+  mainOptions = Seq(input, output, reducers)
+  val input = opt[String](descr = "input path", required = true)
+  val output = opt[String](descr = "output path", required = true)
+  val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
+  val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
+}
+
+object WordCount extends Tokenizer {
+  val log = Logger.getLogger(getClass().getName());
+
+  def main(argv: Array[String]) {
+    val args = new Conf(argv)
+
+    log.info("Input: " + args.input())
+    log.info("Output: " + args.output())
+    log.info("Number of reducers: " + args.reducers())
+    log.info("Use in-mapper combining: " + args.imc())
 
     val conf = new SparkConf().setAppName("Word Count")
     val sc = new SparkContext(conf)
-    val textFile = sc.textFile(args(0))
+
+    val outputDir = new Path(args.output());
+    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true);
+
+    val textFile = sc.textFile(args.input())
     val counts = textFile
       .flatMap(line => tokenize(line))
       .map(word => (word, 1))
       .reduceByKey(_ + _)
-    counts.saveAsTextFile(args(1))
+    counts.saveAsTextFile(args.output())
   }
 }
