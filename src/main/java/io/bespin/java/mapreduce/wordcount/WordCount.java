@@ -1,7 +1,9 @@
 package io.bespin.java.mapreduce.wordcount;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
@@ -51,6 +53,39 @@ public class WordCount extends Configured implements Tool {
     }
   }
 
+  private static class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
+    private final HashMap<String, Integer> counts = new HashMap<String, Integer>();
+
+    @Override
+    public void map(LongWritable key, Text value, Context context)
+        throws IOException, InterruptedException {
+      String line = ((Text) value).toString();
+      StringTokenizer itr = new StringTokenizer(line);
+      while (itr.hasMoreTokens()) {
+        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
+        if (w.length() == 0) continue;
+
+        if (counts.containsKey(w)) {
+          counts.put(w, counts.get(w)+1);
+        } else {
+          counts.put(w, 1);
+        }
+      }
+    }
+
+    @Override
+    public void cleanup(Context context) throws IOException, InterruptedException {
+      IntWritable cnt = new IntWritable();
+      Text token = new Text();
+
+      for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+        token.set(entry.getKey());
+        cnt.set(entry.getValue());
+        context.write(token, cnt);
+      }
+    }
+  }
+
   // Reducer: sums up all the counts.
   private static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
     // Reuse objects.
@@ -84,6 +119,9 @@ public class WordCount extends Configured implements Tool {
 
     @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
     public int numReducers = 1;
+
+    @Option(name = "-imc", usage = "use in-mapper combining")
+    boolean imc = false;
   }
 
   /**
@@ -105,6 +143,7 @@ public class WordCount extends Configured implements Tool {
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - number of reducers: " + args.numReducers);
+    LOG.info(" - use in-mapper combining: " + args.imc);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
@@ -122,7 +161,7 @@ public class WordCount extends Configured implements Tool {
     job.setOutputValueClass(IntWritable.class);
     job.setOutputFormatClass(TextOutputFormat.class);
 
-    job.setMapperClass(MyMapper.class);
+    job.setMapperClass(args.imc ? MyMapper.class : MyMapperIMC.class);
     job.setCombinerClass(MyReducer.class);
     job.setReducerClass(MyReducer.class);
 
