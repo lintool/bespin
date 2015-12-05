@@ -31,7 +31,8 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
   val log = Logger.getLogger(getClass().getName());
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
-    override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
       tokenize(value).foreach(word => context.write(word, 1))
     }
   }
@@ -39,7 +40,8 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
   class MyMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
     val counts = new HashMap[String, Int]().withDefaultValue(0)
 
-    override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
       tokenize(value).foreach(word => counts.put(word, counts(word) + 1))
     }
 
@@ -49,8 +51,23 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
   }
 
   class MyReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
-    override def reduce(key: Text, values: java.lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
-      context.write(key, values.asScala.foldLeft(0)((a, b) => a + b))
+    override def reduce(key: Text, values: java.lang.Iterable[IntWritable],
+                        context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
+      // Although it is possible to write the reducer in a functional style (e.g., with foldLeft),
+      // an imperative implementation is clearer for two reasons:
+      //
+      //   (1) The MapReduce framework supplies an iterable over writable objects; since writable
+      //       are container objects, it simply returns (a reference to) the same object each time
+      //       but with a different payload inside it.
+      //   (2) Implicit writable conversions in WritableConversions.
+      //
+      // The combination of both means that a functional implementation may have unpredictable
+      // behavior when the two issues interact.
+      var sum = 0
+      for (value <- values.asScala) {
+        sum += value
+      }
+      context.write(key, sum)
     }
   }
 
