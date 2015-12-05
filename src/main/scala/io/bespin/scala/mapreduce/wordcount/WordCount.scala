@@ -5,7 +5,7 @@ import io.bespin.scala.util.WritableConversions
 
 import java.util.StringTokenizer
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable._
 
 import org.apache.hadoop.conf._
@@ -37,10 +37,10 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
   }
 
   class MyMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
-    val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
+    val counts = new HashMap[String, Int]().withDefaultValue(0)
 
     override def map(key: LongWritable, value: Text, context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
-      tokenize(value.toString).foreach(word => counts.put(word, counts(word) + 1))
+      tokenize(value).foreach(word => counts.put(word, counts(word) + 1))
     }
 
     override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
@@ -50,7 +50,7 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
 
   class MyReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: java.lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
-      context.write(key, values.reduceLeft((a, b) => a + b));
+      context.write(key, values.asScala.foldLeft(0)((a, b) => a + b))
     }
   }
 
@@ -68,6 +68,9 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     FileInputFormat.addInputPath(job, new Path(args.input()))
     FileOutputFormat.setOutputPath(job, new Path(args.output()))
 
+    job.setJobName("Word Count");
+    job.setJarByClass(this.getClass)
+
     job.setMapOutputKeyClass(classOf[Text])
     job.setMapOutputValueClass(classOf[IntWritable])
     job.setOutputKeyClass(classOf[Text])
@@ -75,7 +78,7 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     job.setOutputFormatClass(classOf[TextOutputFormat[Text, IntWritable]])
 
     job.setMapperClass(if (args.imc()) classOf[MyMapper] else classOf[MyMapperIMC])
-    if (!args.imc()) job.setCombinerClass(classOf[MyReducer])
+    job.setCombinerClass(classOf[MyReducer])
     job.setReducerClass(classOf[MyReducer])
 
     job.setNumReduceTasks(args.reducers());
