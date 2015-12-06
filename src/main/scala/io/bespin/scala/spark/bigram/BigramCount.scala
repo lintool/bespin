@@ -16,7 +16,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
 }
 
 object BigramCount extends Tokenizer {
-  val log = Logger.getLogger(getClass().getName());
+  val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
     val args = new Conf(argv)
@@ -28,8 +28,8 @@ object BigramCount extends Tokenizer {
     val conf = new SparkConf().setAppName("Bigram Count")
     val sc = new SparkContext(conf)
 
-    val outputDir = new Path(args.output());
-    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true);
+    val outputDir = new Path(args.output())
+    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
     val counts = textFile

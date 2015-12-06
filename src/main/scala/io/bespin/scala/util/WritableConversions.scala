@@ -1,4 +1,4 @@
-package io.bespin.scala.util;
+package io.bespin.scala.util
 
 import org.apache.hadoop.io._
 

@@ -1,4 +1,4 @@
-package io.bespin.scala.spark.wordcount;
+package io.bespin.scala.spark.wordcount
 
 import io.bespin.scala.util.Tokenizer
 
@@ -19,7 +19,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
 }
 
 object WordCount extends Tokenizer {
-  val log = Logger.getLogger(getClass().getName());
+  val log = Logger.getLogger(getClass().getName())
 
   def wcIter(iter: Iterator[String]): Iterator[(String, Int)] = {
     val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
@@ -41,8 +41,8 @@ object WordCount extends Tokenizer {
     val conf = new SparkConf().setAppName("Word Count")
     val sc = new SparkContext(conf)
 
-    val outputDir = new Path(args.output());
-    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true);
+    val outputDir = new Path(args.output())
+    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
 

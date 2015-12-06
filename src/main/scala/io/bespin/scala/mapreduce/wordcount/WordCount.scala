@@ -1,4 +1,4 @@
-package io.bespin.scala.mapreduce.wordcount;
+package io.bespin.scala.mapreduce.wordcount
 
 import io.bespin.scala.util.Tokenizer
 import io.bespin.scala.util.WritableConversions
@@ -28,7 +28,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) {
 }
 
 object WordCount extends Configured with Tool with WritableConversions with Tokenizer {
-  val log = Logger.getLogger(getClass().getName());
+  val log = Logger.getLogger(getClass().getName())
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text,
@@ -79,13 +79,13 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     log.info("Number of reducers: " + args.reducers())
     log.info("Use in-mapper combining: " + args.imc())
 
-    val conf = getConf();
-    val job = Job.getInstance(conf);
+    val conf = getConf()
+    val job = Job.getInstance(conf)
 
     FileInputFormat.addInputPath(job, new Path(args.input()))
     FileOutputFormat.setOutputPath(job, new Path(args.output()))
 
-    job.setJobName("Word Count");
+    job.setJobName("Word Count")
     job.setJarByClass(this.getClass)
 
     job.setMapOutputKeyClass(classOf[Text])
@@ -98,14 +98,14 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     job.setCombinerClass(classOf[MyReducer])
     job.setReducerClass(classOf[MyReducer])
 
-    job.setNumReduceTasks(args.reducers());
+    job.setNumReduceTasks(args.reducers())
 
-    val outputDir = new Path(args.output());
-    FileSystem.get(conf).delete(outputDir, true);
+    val outputDir = new Path(args.output())
+    FileSystem.get(conf).delete(outputDir, true)
 
-    val startTime = System.currentTimeMillis();
-    job.waitForCompletion(true);
-    log.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    val startTime = System.currentTimeMillis()
+    job.waitForCompletion(true)
+    log.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds")
 
     return 0
   }
