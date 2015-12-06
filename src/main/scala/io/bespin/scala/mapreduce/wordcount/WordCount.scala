@@ -94,7 +94,7 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     job.setOutputValueClass(classOf[IntWritable])
     job.setOutputFormatClass(classOf[TextOutputFormat[Text, IntWritable]])
 
-    job.setMapperClass(if (args.imc()) classOf[MyMapper] else classOf[MyMapperIMC])
+    job.setMapperClass(if (args.imc()) classOf[MyMapperIMC] else classOf[MyMapper])
     job.setCombinerClass(classOf[MyReducer])
     job.setReducerClass(classOf[MyReducer])
 
