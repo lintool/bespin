@@ -59,6 +59,31 @@ $ diff counts.jmr.combiner.txt counts.spark.default.txt
 
 **Tip:** `sed` does not accept control characters such as `\t`, so you have to insert a literal tab in the command line. To do so on Mac OS X, type `^V^I`.
 
+# Inverted Indexing and Boolean Search in MapReduce
+
+Building the inverted index:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BuildInvertedIndex \
+   -input data/Shakespeare.txt -output index
+```
+
+Looking up an individual postings list:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.LookupPostings \
+   -index index -collection data/Shakespeare.txt -term "star-cross'd"
+```
+
+Running a boolean search:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BooleanRetrieval \
+   -index index -collection data/Shakespeare.txt -query "white red OR rose AND pluck AND"
+```
+
+Note that the query must be in [Reverse Polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation), so the above is equivalent to `(white OR red) AND rose AND pluck` in standard infix notation.
+
 # Parallel Breadth-First Search in MapReduce
 
 Make sure you've grabbed the sample graph data; see "Getting Started" above. First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
