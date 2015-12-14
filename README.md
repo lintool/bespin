@@ -50,8 +50,8 @@ To enable the "in-mapper combining" optimization in Spark, use the `--imc` optio
 Compare results to make sure they are the same:
 
 ```
-$ cat wc-jmr-combiner/part-r-0000* | sed -E 's/^V^I/ /' > counts.jmr.combiner.txt
-$ cat wc-smr-combiner/part-r-0000* | sed -E 's/^V^I/ /' > counts.smr.combiner.txt
+$ cat wc-jmr-combiner/part-r-0000* | sed -E 's/^V^I/ /' | sort > counts.jmr.combiner.txt
+$ cat wc-smr-combiner/part-r-0000* | sed -E 's/^V^I/ /' | sort > counts.smr.combiner.txt
 $ cat wc-spark-default/part-0000* | sed -E 's/^\((.*),([0-9]+)\)$/\1 \2/' | sort > counts.spark.default.txt
 $ diff counts.jmr.combiner.txt counts.smr.combiner.txt
 $ diff counts.jmr.combiner.txt counts.spark.default.txt
@@ -59,7 +59,7 @@ $ diff counts.jmr.combiner.txt counts.spark.default.txt
 
 **Tip:** `sed` does not accept control characters such as `\t`, so you have to insert a literal tab in the command line. To do so on Mac OS X, type `^V^I`.
 
-## Inverted Indexing and Boolean Search in MapReduce
+## Inverted Indexing and Boolean Retrieval in MapReduce
 
 Building the inverted index:
 
@@ -75,7 +75,7 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.Lo
    -index index -collection data/Shakespeare.txt -term "star-cross'd"
 ```
 
-Running a boolean search:
+Running a boolean retrieval:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BooleanRetrieval \
