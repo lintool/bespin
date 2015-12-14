@@ -138,7 +138,9 @@ To find all the nodes that are reachable at a particular iteration, run the foll
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindReachableNodes \
-   -input graph-BFS/iter0006 -output graph-BFS/reachable-iter0006
+   -input graph-BFS/iter0005 -output graph-BFS/reachable-iter0005
+
+$ hadoop fs -cat 'graph-BFS/reachable-iter0005/part*' | wc
 ```
 
 ## PageRank in MapReduce
@@ -176,7 +178,7 @@ Extract the top 20 nodes by PageRank value and examine the results:
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.FindMaxPageRankNodes \
    -input graph-PageRank/iter0010 -output graph-PageRank-top20 -top 20
 
-$ cat graph-PageRank-top20/part-r-00000
+$ hadoop fs -cat graph-PageRank-top20/part-r-00000
 367     -6.0373473
 249     -6.1263785
 145     -6.1874337
