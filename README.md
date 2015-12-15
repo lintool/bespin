@@ -59,6 +59,77 @@ $ diff counts.jmr.combiner.txt counts.spark.default.txt
 
 **Tip:** `sed` does not accept control characters such as `\t`, so you have to insert a literal tab in the command line. To do so on Mac OS X, type `^V^I`.
 
+## Computing Bigram Relative Frequencies in MapReduce
+
+Running a simple bigram count:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.BigramCount \
+   -input data/Shakespeare.txt -output bigram-count
+```
+
+Computing bigram relative frequencies:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequency \
+   -input data/Shakespeare.txt -output bigram-freq -textOutput
+```
+
+To obtain human-readable output, make sure to use the `-textOutput` option; otherwise, the job defaults to `SequenceFile` output.
+
+Let's spot-check the output to make sure the results are correct. For example, what are the bigrams that begin with "dream"?
+
+```
+$ hadoop fs -cat bigram-count/part* | grep '^dream '
+dream again	2
+dream and	2
+dream are	1
+dream as	1
+dream away	2
+...
+```
+
+What is the sum of all these counts?
+
+```
+$ hadoop fs -cat bigram-count/part* | grep '^dream ' | cut -f 2 | awk '{sum+=$1} END {print sum}'
+79
+```
+
+Confirm that the numbers match the relative frequency computations:
+
+```
+$ hadoop fs -cat bigram-freq/part* | grep '(dream, '
+```
+
+## Computing Term Co-occurrence Matrix in MapReduce
+
+Running the "pairs" implementation:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs \
+   -input data/Shakespeare.txt -output cooccur-pairs -window 2
+```
+
+Running the "stripes" implementation:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes \
+   -input data/Shakespeare.txt -output cooccur-stripes -window 2
+```
+
+Let's spot check the results. For example, here are all the terms the co-occur with "dream" with the "pairs" implementation:
+
+```
+$ hadoop fs -cat cooccur-pairs/part* | grep '(dream, '
+```
+
+We can verify that the "stripes" implementation gives the same results.
+
+```
+$ hadoop fs -cat cooccur-stripes/part* | grep '^dream\t'
+```
+
 ## Inverted Indexing and Boolean Retrieval in MapReduce
 
 Building the inverted index:
