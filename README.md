@@ -115,6 +115,8 @@ And the "stripes" implementation of the relative frequency computations:
 $ hadoop fs -cat bigram-freq-stripes/part* | grep '^dream\t'
 ```
 
+**Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
+
 ## Computing Term Co-occurrence Matrix in MapReduce
 
 Running the "pairs" implementation:
@@ -142,6 +144,8 @@ We can verify that the "stripes" implementation gives the same results.
 ```
 $ hadoop fs -cat cooccur-stripes/part* | grep '^dream\t'
 ```
+
+**Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
 
 ## Inverted Indexing and Boolean Retrieval in MapReduce
 
