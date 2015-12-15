@@ -9,12 +9,10 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -28,14 +26,15 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
-import tl.lin.data.pair.PairOfStrings;
+import tl.lin.data.map.HMapStFW;
+import tl.lin.data.map.MapKF;
 
-public class ComputeBigramRelativeFrequency  extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(ComputeBigramRelativeFrequency.class);
+public class ComputeBigramRelativeFrequencyStripes  extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(ComputeBigramRelativeFrequencyStripes.class);
 
-  protected static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
-    private static final FloatWritable ONE = new FloatWritable(1);
-    private static final PairOfStrings BIGRAM = new PairOfStrings();
+  protected static class MyMapper extends Mapper<LongWritable, Text, Text, HMapStFW> {
+    private static final HMapStFW MAP = new HMapStFW();
+    private static final Text KEY = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
@@ -52,68 +51,56 @@ public class ComputeBigramRelativeFrequency  extends Configured implements Tool 
 
       if (tokens.size() < 2) return;
       for (int i = 1; i < tokens.size(); i++) {
-        BIGRAM.set(tokens.get(i - 1), tokens.get(i));
-        context.write(BIGRAM, ONE);
-
-        BIGRAM.set(tokens.get(i - 1), "*");
-        context.write(BIGRAM, ONE);
+        MAP.clear();
+        MAP.put(tokens.get(i), 1);
+        KEY.set(tokens.get(i - 1));
+        context.write(KEY, MAP);
       }
     }
   }
 
-  protected static class MyCombiner extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
-    private static final FloatWritable SUM = new FloatWritable();
-
+  private static class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
     @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+    public void reduce(Text key, Iterable<HMapStFW> values, Context context)
         throws IOException, InterruptedException {
-      int sum = 0;
-      Iterator<FloatWritable> iter = values.iterator();
+      Iterator<HMapStFW> iter = values.iterator();
+      HMapStFW map = new HMapStFW();
+
       while (iter.hasNext()) {
-        sum += iter.next().get();
+        map.plus(iter.next());
       }
-      SUM.set(sum);
-      context.write(key, SUM);
+
+      context.write(key, map);
     }
   }
 
-  protected static class MyReducer extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
-    private static final FloatWritable VALUE = new FloatWritable();
-    private float marginal = 0.0f;
-
+  private static class MyReducer extends Reducer<Text, HMapStFW, Text, HMapStFW> {
     @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+    public void reduce(Text key, Iterable<HMapStFW> values, Context context)
         throws IOException, InterruptedException {
+      Iterator<HMapStFW> iter = values.iterator();
+      HMapStFW map = new HMapStFW();
+
+      while (iter.hasNext()) {
+        map.plus(iter.next());
+      }
+
       float sum = 0.0f;
-      Iterator<FloatWritable> iter = values.iterator();
-      while (iter.hasNext()) {
-        sum += iter.next().get();
+      for (MapKF.Entry<String> entry : map.entrySet()) {
+        sum += entry.getValue();
+      }
+      for (String term : map.keySet()) {
+        map.put(term, map.get(term) / sum);
       }
 
-      if (key.getRightElement().equals("*")) {
-        VALUE.set(sum);
-        context.write(key, VALUE);
-        marginal = sum;
-      } else {
-        VALUE.set(sum / marginal);
-        context.write(key, VALUE);
-      }
-    }
-  }
-
-  protected static class MyPartitioner extends Partitioner<PairOfStrings, FloatWritable> {
-    @Override
-    public int getPartition(PairOfStrings key, FloatWritable value, int numReduceTasks) {
-      return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
+      context.write(key, map);
     }
   }
 
   /**
    * Creates an instance of this tool.
    */
-  private ComputeBigramRelativeFrequency() {}
+  private ComputeBigramRelativeFrequencyStripes() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -144,25 +131,25 @@ public class ComputeBigramRelativeFrequency  extends Configured implements Tool 
       return -1;
     }
 
-    LOG.info("Tool name: " + ComputeBigramRelativeFrequency.class.getSimpleName());
+    LOG.info("Tool name: " + ComputeBigramRelativeFrequencyStripes.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(ComputeBigramRelativeFrequency.class.getSimpleName());
-    job.setJarByClass(ComputeBigramRelativeFrequency.class);
+    job.setJobName(ComputeBigramRelativeFrequencyPairs.class.getSimpleName());
+    job.setJarByClass(ComputeBigramRelativeFrequencyPairs.class);
 
     job.setNumReduceTasks(args.numReducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
     FileOutputFormat.setOutputPath(job, new Path(args.output));
 
-    job.setMapOutputKeyClass(PairOfStrings.class);
-    job.setMapOutputValueClass(FloatWritable.class);
-    job.setOutputKeyClass(PairOfStrings.class);
-    job.setOutputValueClass(FloatWritable.class);
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(HMapStFW.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(HMapStFW.class);
     if (args.textOutput) {
       job.setOutputFormatClass(TextOutputFormat.class);
     } else {
@@ -172,7 +159,6 @@ public class ComputeBigramRelativeFrequency  extends Configured implements Tool 
     job.setMapperClass(MyMapper.class);
     job.setCombinerClass(MyCombiner.class);
     job.setReducerClass(MyReducer.class);
-    job.setPartitionerClass(MyPartitioner.class);
 
     // Delete the output directory if it exists already.
     Path outputDir = new Path(args.output);
@@ -189,6 +175,6 @@ public class ComputeBigramRelativeFrequency  extends Configured implements Tool 
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new ComputeBigramRelativeFrequency(), args);
+    ToolRunner.run(new ComputeBigramRelativeFrequencyStripes(), args);
   }
 }

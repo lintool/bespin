@@ -68,11 +68,18 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.Bi
    -input data/Shakespeare.txt -output bigram-count
 ```
 
-Computing bigram relative frequencies:
+Computing bigram relative frequencies using the "pairs" implementation:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequency \
-   -input data/Shakespeare.txt -output bigram-freq -textOutput
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyPairs \
+   -input data/Shakespeare.txt -output bigram-freq-pairs -textOutput
+```
+
+Computing bigram relative frequencies using the "stripes" implementation:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyStripes \
+   -input data/Shakespeare.txt -output bigram-freq-stripes -textOutput
 ```
 
 To obtain human-readable output, make sure to use the `-textOutput` option; otherwise, the job defaults to `SequenceFile` output.
@@ -96,10 +103,16 @@ $ hadoop fs -cat bigram-count/part* | grep '^dream ' | cut -f 2 | awk '{sum+=$1}
 79
 ```
 
-Confirm that the numbers match the relative frequency computations:
+Confirm that the numbers match the "pairs" implementation of the relative frequency computations:
 
 ```
-$ hadoop fs -cat bigram-freq/part* | grep '(dream, '
+$ hadoop fs -cat bigram-freq-pairs/part* | grep '(dream, '
+```
+
+And the "stripes" implementation of the relative frequency computations:
+
+```
+$ hadoop fs -cat bigram-freq-stripes/part* | grep '^dream\t'
 ```
 
 ## Computing Term Co-occurrence Matrix in MapReduce
