@@ -2,13 +2,6 @@ package io.bespin.java.mapreduce.bfs;
 
 import java.io.IOException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,6 +15,10 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
 
 /**
  * Tool for extracting nodes that are a particular distance from the source node.
@@ -30,13 +27,14 @@ import org.apache.log4j.Logger;
  */
 public class FindNodeAtDistance extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(FindNodeAtDistance.class);
+  private static final String DISTANCE_KEY = "distance";
 
   private static class MyMapper extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
     private static int distance;
 
     @Override
     public void setup(Context context) {
-      distance = context.getConfiguration().getInt(DISTANCE_OPTION, 0);
+      distance = context.getConfiguration().getInt(DISTANCE_KEY, 0);
     }
 
     @Override
@@ -50,59 +48,49 @@ public class FindNodeAtDistance extends Configured implements Tool {
 
   public FindNodeAtDistance() {}
 
-  private static final String INPUT_OPTION = "input";
-  private static final String OUTPUT_OPTION = "output";
-  private static final String DISTANCE_OPTION = "distance";
+  public static class Args {
+    @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
+    public String input;
 
-  @SuppressWarnings("static-access")
-  @Override
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
-    options.addOption(OptionBuilder.withArgName("path")
-        .hasArg().withDescription("XML dump file").create(INPUT_OPTION));
-    options.addOption(OptionBuilder.withArgName("path")
-        .hasArg().withDescription("output path").create(OUTPUT_OPTION));
-    options.addOption(OptionBuilder.withArgName("num")
-        .hasArg().withDescription("distance").create(DISTANCE_OPTION));
+    @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
+    public String output;
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+    @Option(name = "-distance", metaVar = "[node]", required = true, usage = "distance")
+    public int distance;
+  }
+
+  /**
+   * Runs this tool.
+   */
+  public int run(String[] argv) throws Exception {
+    Args args = new Args();
+    CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
+
     try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
+      parser.parseArgument(argv);
+    } catch (CmdLineException e) {
+      System.err.println(e.getMessage());
+      parser.printUsage(System.err);
       return -1;
     }
-
-    if (!cmdline.hasOption(INPUT_OPTION) || !cmdline.hasOption(OUTPUT_OPTION)
-        || !cmdline.hasOption(DISTANCE_OPTION)) {
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
-
-    String inputPath = cmdline.getOptionValue(INPUT_OPTION);
-    String outputPath = cmdline.getOptionValue(OUTPUT_OPTION);
-    int distance = Integer.parseInt(cmdline.getOptionValue(DISTANCE_OPTION));
 
     LOG.info("Tool name: " + this.getClass().getName());
-    LOG.info(" - inputDir: " + inputPath);
-    LOG.info(" - outputDir: " + outputPath);
-    LOG.info(" - distance: " + distance);
+    LOG.info(" - inputDir: " + args.input);
+    LOG.info(" - outputDir: " + args.output);
+    LOG.info(" - distance: " + args.distance);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(String.format("FindNodeAtDistance[%s: %s, %s: %s, %s: %d]",
-        INPUT_OPTION, inputPath, OUTPUT_OPTION, outputPath, DISTANCE_OPTION, distance));
+    job.setJobName(String.format("FindNodeAtDistance[input: %s, output: %s, distance: %d]",
+        args.input, args.output, args.distance));
     job.setJarByClass(FindNodeAtDistance.class);
 
     job.setNumReduceTasks(0);
 
-    job.getConfiguration().setInt(DISTANCE_OPTION, distance);
+    job.getConfiguration().setInt(DISTANCE_KEY, args.distance);
     job.getConfiguration().setInt("mapred.min.split.size", 1024 * 1024 * 1024);
 
-    FileInputFormat.addInputPath(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+    FileInputFormat.addInputPath(job, new Path(args.input));
+    FileOutputFormat.setOutputPath(job, new Path(args.output));
 
     job.setInputFormatClass(SequenceFileInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
@@ -115,7 +103,7 @@ public class FindNodeAtDistance extends Configured implements Tool {
     job.setMapperClass(MyMapper.class);
 
     // Delete the output directory if it exists already.
-    FileSystem.get(job.getConfiguration()).delete(new Path(outputPath), true);
+    FileSystem.get(job.getConfiguration()).delete(new Path(args.output), true);
 
     job.waitForCompletion(true);
 

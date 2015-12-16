@@ -184,21 +184,21 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.Encod
 In the current implementation, you have to run a MapReduce job for every iteration:
 
 ```
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0000 -output graph-BFS/iter0001 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0001 -output graph-BFS/iter0002 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0002 -output graph-BFS/iter0003 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0003 -output graph-BFS/iter0004 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0004 -output graph-BFS/iter0005 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0005 -output graph-BFS/iter0006 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0006 -output graph-BFS/iter0007 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0007 -output graph-BFS/iter0008 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0008 -output graph-BFS/iter0009 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0009 -output graph-BFS/iter0010 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0010 -output graph-BFS/iter0011 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0011 -output graph-BFS/iter0012 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0012 -output graph-BFS/iter0013 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0013 -output graph-BFS/iter0014 -num_partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0014 -output graph-BFS/iter0015 -num_partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0000 -output graph-BFS/iter0001 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0001 -output graph-BFS/iter0002 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0002 -output graph-BFS/iter0003 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0003 -output graph-BFS/iter0004 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0004 -output graph-BFS/iter0005 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0005 -output graph-BFS/iter0006 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0006 -output graph-BFS/iter0007 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0007 -output graph-BFS/iter0008 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0008 -output graph-BFS/iter0009 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0009 -output graph-BFS/iter0010 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0010 -output graph-BFS/iter0011 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0011 -output graph-BFS/iter0012 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0012 -output graph-BFS/iter0013 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0013 -output graph-BFS/iter0014 -partitions 5
+hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0014 -output graph-BFS/iter0015 -partitions 5
 ```
 
 The MapReduce job counters tell you how many nodes are reachable at each iteration:
@@ -229,6 +229,15 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindR
    -input graph-BFS/iter0005 -output graph-BFS/reachable-iter0005
 
 $ hadoop fs -cat 'graph-BFS/reachable-iter0005/part*' | wc
+```
+
+To find all the nodes that are at a particular distance (e.g., the search frontier), run the following job:
+
+```
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance \
+   -input graph-BFS/iter0005 -output graph-BFS/d5 -distance 5
+
+$ hadoop fs -cat 'graph-BFS/d5/part*' | wc
 ```
 
 ## PageRank in MapReduce

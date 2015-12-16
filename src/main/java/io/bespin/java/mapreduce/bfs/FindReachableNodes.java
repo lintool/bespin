@@ -2,13 +2,6 @@ package io.bespin.java.mapreduce.bfs;
 
 import java.io.IOException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,6 +15,10 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
 
 /**
  * Tool for extracting nodes that are reachable from the source node.
@@ -43,52 +40,44 @@ public class FindReachableNodes extends Configured implements Tool {
 
   public FindReachableNodes() {}
 
-  private static final String INPUT_OPTION = "input";
-  private static final String OUTPUT_OPTION = "output";
+  public static class Args {
+    @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
+    public String input;
 
-  @SuppressWarnings("static-access")
-  @Override
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
-    options.addOption(OptionBuilder.withArgName("path")
-        .hasArg().withDescription("XML dump file").create(INPUT_OPTION));
-    options.addOption(OptionBuilder.withArgName("path")
-        .hasArg().withDescription("output path").create(OUTPUT_OPTION));
+    @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
+    public String output;
+  }
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+  /**
+   * Runs this tool.
+   */
+  public int run(String[] argv) throws Exception {
+    Args args = new Args();
+    CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
+
     try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
+      parser.parseArgument(argv);
+    } catch (CmdLineException e) {
+      System.err.println(e.getMessage());
+      parser.printUsage(System.err);
       return -1;
     }
-
-    if (!cmdline.hasOption(INPUT_OPTION) || !cmdline.hasOption(OUTPUT_OPTION)) {
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
-
-    String inputPath = cmdline.getOptionValue(INPUT_OPTION);
-    String outputPath = cmdline.getOptionValue(OUTPUT_OPTION);
 
     LOG.info("Tool name: " + this.getClass().getName());
-    LOG.info(" - inputDir: " + inputPath);
-    LOG.info(" - outputDir: " + outputPath);
+    LOG.info(" - inputDir: " + args.input);
+    LOG.info(" - outputDir: " + args.output);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(String.format("FindReachableNodes:[%s: %s, %s: %s]", INPUT_OPTION,
-        inputPath, OUTPUT_OPTION, outputPath));
+    job.setJobName(String.format("FindReachableNodes:[input: %s, output: %s]",
+        args.input, args.output));
     job.setJarByClass(FindReachableNodes.class);
 
     job.setNumReduceTasks(0);
 
     job.getConfiguration().setInt("mapred.min.split.size", 1024 * 1024 * 1024);
 
-    FileInputFormat.addInputPath(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+    FileInputFormat.addInputPath(job, new Path(args.input));
+    FileOutputFormat.setOutputPath(job, new Path(args.output));
 
     job.setInputFormatClass(SequenceFileInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
@@ -101,7 +90,7 @@ public class FindReachableNodes extends Configured implements Tool {
     job.setMapperClass(MyMapper.class);
 
     // Delete the output directory if it exists already.
-    FileSystem.get(job.getConfiguration()).delete(new Path(outputPath), true);
+    FileSystem.get(job.getConfiguration()).delete(new Path(args.output), true);
 
     job.waitForCompletion(true);
 
