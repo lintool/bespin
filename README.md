@@ -18,6 +18,8 @@ $ curl http://lintool.github.io/bespin-data/Shakespeare.txt > data/Shakespeare.t
 $ curl http://lintool.github.io/bespin-data/p2p-Gnutella08-adj.txt > data/p2p-Gnutella08-adj.txt
 ```
 
+For more information about these data sources, check out the [Bespin data repo](https://github.com/lintool/bespin-data).
+
 ## Word Count in MapReduce and Spark
 
 Running word count in Java MapReduce:
@@ -50,14 +52,14 @@ To enable the "in-mapper combining" optimization in Spark, use the `--imc` optio
 Compare results to make sure they are the same:
 
 ```
-$ cat wc-jmr-combiner/part-r-0000* | sed -E 's/^V^I/ /' | sort > counts.jmr.combiner.txt
-$ cat wc-smr-combiner/part-r-0000* | sed -E 's/^V^I/ /' | sort > counts.smr.combiner.txt
+$ cat wc-jmr-combiner/part-r-0000* | awk '{print $1,$2;}' | sort > counts.jmr.combiner.txt
+$ cat wc-smr-combiner/part-r-0000* | awk '{print $1,$2;}' | sort > counts.smr.combiner.txt
 $ cat wc-spark-default/part-0000* | sed -E 's/^\((.*),([0-9]+)\)$/\1 \2/' | sort > counts.spark.default.txt
 $ diff counts.jmr.combiner.txt counts.smr.combiner.txt
 $ diff counts.jmr.combiner.txt counts.spark.default.txt
 ```
 
-**Tip:** `sed` does not accept control characters such as `\t`, so you have to insert a literal tab in the command line. To do so on Mac OS X, type `^V^I`.
+**Tip:** We use `awk` in some cases and `sed` in others because `sed` does not accept control characters such as `\t` (but GNU `sed` does), so you have to insert a literal tab in the command line. This is awkward: on Mac OS X, you need to type `^V^I`; so it's just easier with `awk`.
 
 ## Computing Bigram Relative Frequencies in MapReduce
 
@@ -112,7 +114,7 @@ $ hadoop fs -cat bigram-freq-pairs/part* | grep '(dream, '
 And the "stripes" implementation of the relative frequency computations:
 
 ```
-$ hadoop fs -cat bigram-freq-stripes/part* | grep '^dream\t'
+$ hadoop fs -cat bigram-freq-stripes/part* | awk '/^dream\t/'
 ```
 
 **Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
@@ -142,7 +144,7 @@ $ hadoop fs -cat cooccur-pairs/part* | grep '(dream, '
 We can verify that the "stripes" implementation gives the same results.
 
 ```
-$ hadoop fs -cat cooccur-stripes/part* | grep '^dream\t'
+$ hadoop fs -cat cooccur-stripes/part* | awk '/^dream\t/'
 ```
 
 **Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
