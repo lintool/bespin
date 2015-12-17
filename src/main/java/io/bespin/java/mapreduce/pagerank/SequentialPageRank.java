@@ -118,7 +118,7 @@ public class SequentialPageRank {
     System.out.println("\nPageRank of nodes, in descending order:");
     Ranking<String> r = null;
     while ((r = q.poll()) != null) {
-      System.out.println(Math.log(r.rankScore) + "\t" + r.getRanked());
+      System.out.println(Math.log(r.rankScore) + " " + r.getRanked());
     }
   }
 }
