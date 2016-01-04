@@ -18,11 +18,15 @@ $ curl http://lintool.github.io/bespin-data/Shakespeare.txt > data/Shakespeare.t
 $ curl http://lintool.github.io/bespin-data/p2p-Gnutella08-adj.txt > data/p2p-Gnutella08-adj.txt
 ```
 
-For more information about these data sources, check out the [Bespin data repo](https://github.com/lintool/bespin-data).
+The data collections are stored in the [Bespin data repo](https://github.com/lintool/bespin-data).
+
++ The file `Shakespeare.txt` contains the [The Complete Works of William Shakespeare](http://www.gutenberg.org/ebooks/100) from [Project Gutenberg](http://www.gutenberg.org/).
++ The file `p2p-Gnutella08-adj.txt` contains a [snapshot of the Gnutella peer-to-peer file sharing network from August 2002](http://snap.stanford.edu/data/p2p-Gnutella08.html), where nodes represent hosts in the Gnutella network topology and edges represent connections between the Gnutella hosts. This dataset is available from the [Stanford Network Analysis Project](http://snap.stanford.edu/).
+
 
 ## Word Count in MapReduce and Spark
 
-Running word count in Java MapReduce:
+Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running word count in Java MapReduce:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.wordcount.WordCount \
@@ -63,7 +67,7 @@ $ diff counts.jmr.combiner.txt counts.spark.default.txt
 
 ## Computing Bigram Relative Frequencies in MapReduce
 
-Running a simple bigram count:
+Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running a simple bigram count:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.BigramCount \
@@ -121,7 +125,7 @@ $ hadoop fs -cat bigram-freq-stripes/part* | awk '/^dream\t/'
 
 ## Computing Term Co-occurrence Matrix in MapReduce
 
-Running the "pairs" implementation:
+Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running the "pairs" implementation:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs \
@@ -151,7 +155,7 @@ $ hadoop fs -cat cooccur-stripes/part* | awk '/^dream\t/'
 
 ## Inverted Indexing and Boolean Retrieval in MapReduce
 
-Building the inverted index:
+Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Building the inverted index:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BuildInvertedIndex \
@@ -176,7 +180,7 @@ Note that the query must be in [Reverse Polish notation](https://en.wikipedia.or
 
 ## Parallel Breadth-First Search in MapReduce
 
-Make sure you've grabbed the sample graph data; see "Getting Started" above. First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
+Make sure you've grabbed the sample graph data (see "Getting Started" above). First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.EncodeBfsGraph \
@@ -244,7 +248,7 @@ $ hadoop fs -cat 'graph-BFS/d5/part*' | wc
 
 ## PageRank in MapReduce
 
-Make sure you've grabbed the sample graph data; see "Getting Started" above. First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
+Make sure you've grabbed the sample graph data (see "Getting Started" above). First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.BuildPageRankRecords \
