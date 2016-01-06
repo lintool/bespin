@@ -207,12 +207,13 @@ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.Iterate
 hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0014 -output graph-BFS/iter0015 -partitions 5
 ```
 
-A Bash script is provided to iterate the above MapReduce job:
+Here's a bash script to iterate through the above MapReduce jobs:
+
 ```
 #!/bin/bash
 for i in `seq 0 14`;
 do
-    echo $i
+    echo "Iteration $i: reading graph-BFS/iter000$i, writing: graph-BFS/iter000$(($i+1))"
     hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter000$i" -output "graph-BFS/iter000$(($i+1))" -partitions 5
 done
 ```
