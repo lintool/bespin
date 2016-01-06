@@ -207,6 +207,16 @@ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.Iterate
 hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0014 -output graph-BFS/iter0015 -partitions 5
 ```
 
+A Bash script is provided to iterate the above MapReduce job:
+```
+#!/bin/bash
+for i in `seq 0 14`;
+do
+    echo $i
+    hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter000$i" -output "graph-BFS/iter000$(($i+1))" -partitions 5
+done
+```
+
 The MapReduce job counters tell you how many nodes are reachable at each iteration:
 
 Iteration |  Reachable
