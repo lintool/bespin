@@ -2,8 +2,10 @@ package io.bespin.java.mapreduce.bigram;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
@@ -33,13 +35,14 @@ public class ComputeBigramRelativeFrequencyStripes  extends Configured implement
   private static final Logger LOG = Logger.getLogger(ComputeBigramRelativeFrequencyStripes.class);
 
   protected static class MyMapper extends Mapper<LongWritable, Text, Text, HMapStFW> {
-    private static final HMapStFW MAP = new HMapStFW();
-    private static final Text KEY = new Text();
+    private static final Text TEXT = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
+
+      Map<String, HMapStFW> stripes = new HashMap<String, HMapStFW>();
 
       List<String> tokens = new ArrayList<String>();
       StringTokenizer itr = new StringTokenizer(line);
@@ -51,10 +54,25 @@ public class ComputeBigramRelativeFrequencyStripes  extends Configured implement
 
       if (tokens.size() < 2) return;
       for (int i = 1; i < tokens.size(); i++) {
-        MAP.clear();
-        MAP.put(tokens.get(i), 1);
-        KEY.set(tokens.get(i - 1));
-        context.write(KEY, MAP);
+        String prev = tokens.get(i-1);
+        String cur = tokens.get(i);
+        if (stripes.containsKey(prev)) {
+          HMapStFW stripe = stripes.get(prev);
+          if (stripe.containsKey(cur)) {
+            stripe.put(cur, stripe.get(cur)+1.0f);
+          } else {
+            stripe.put(cur, 1.0f);
+          }
+        } else {
+          HMapStFW stripe = new HMapStFW();
+          stripe.put(cur, 1.0f);
+          stripes.put(prev, stripe);
+        }
+      }
+
+      for (String t : stripes.keySet()) {
+        TEXT.set(t);
+        context.write(TEXT, stripes.get(t));
       }
     }
   }
