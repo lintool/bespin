@@ -138,8 +138,8 @@ public class ComputeBigramRelativeFrequencyStripes  extends Configured implement
     LOG.info(" - text output: " + args.textOutput);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(ComputeBigramRelativeFrequencyPairs.class.getSimpleName());
-    job.setJarByClass(ComputeBigramRelativeFrequencyPairs.class);
+    job.setJobName(ComputeBigramRelativeFrequencyStripes.class.getSimpleName());
+    job.setJarByClass(ComputeBigramRelativeFrequencyStripes.class);
 
     job.setNumReduceTasks(args.numReducers);
 
