@@ -78,14 +78,14 @@ Computing bigram relative frequencies using the "pairs" implementation:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyPairs \
-   -input data/Shakespeare.txt -output bigram-freq-pairs -textOutput
+   -input data/Shakespeare.txt -output bigram-freq-mr-pairs -textOutput
 ```
 
 Computing bigram relative frequencies using the "stripes" implementation:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyStripes \
-   -input data/Shakespeare.txt -output bigram-freq-stripes -textOutput
+   -input data/Shakespeare.txt -output bigram-freq-mr-stripes -textOutput
 ```
 
 To obtain human-readable output, make sure to use the `-textOutput` option; otherwise, the job defaults to `SequenceFile` output.
@@ -122,6 +122,14 @@ $ hadoop fs -cat bigram-freq-stripes/part* | awk '/^dream\t/'
 ```
 
 **Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
+
+Here's how you can verify that the pairs and stripes implementation give you the same results:
+
+```
+$ cat bigram-freq-mr-pairs/part-r-0000* | awk '{print $1$2,$3;}' | grep -v ",\*)" | sort > freq.mr.pairs.txt
+$ cat bigram-freq-mr-stripes/part-r-0000* | perl -ne '%H=();m/([^\t]+)\t\{(.*)\}/; $k=$1; @k=split ", ",$2; foreach(@k){@p=split "=",$_;$H{$p[0]}=$p[1];}; foreach (sort keys %H) {print "($k,$_) $H{$_}\n";}' | sort > freq.mr.stripes.txt
+$ diff freq.mr.stripes.txt freq.mr.pairs.txt
+```
 
 ## Computing Term Co-occurrence Matrix in MapReduce
 
