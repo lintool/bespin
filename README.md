@@ -112,13 +112,13 @@ $ hadoop fs -cat bigram-count/part* | grep '^dream ' | cut -f 2 | awk '{sum+=$1}
 Confirm that the numbers match the "pairs" implementation of the relative frequency computations:
 
 ```
-$ hadoop fs -cat bigram-freq-pairs/part* | grep '(dream, '
+$ hadoop fs -cat bigram-freq-mr-pairs/part* | grep '(dream, '
 ```
 
 And the "stripes" implementation of the relative frequency computations:
 
 ```
-$ hadoop fs -cat bigram-freq-stripes/part* | awk '/^dream\t/'
+$ hadoop fs -cat bigram-freq-mr-stripes/part* | awk '/^dream\t/'
 ```
 
 **Tip:** Note that `grep` in Mac OS X accepts `\t`, but not on Linux; strictly speaking, `grep` uses regular expressions as defined by POSIX, and for whatever reasons POSIX does not define `\t` as tab. One workaround is to use `-P`, which specifies Perl regular expressions; however the `-P` option does not exist in Mac OS X.
