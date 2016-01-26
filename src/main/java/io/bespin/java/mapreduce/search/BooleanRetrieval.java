@@ -117,11 +117,12 @@ public class BooleanRetrieval extends Configured implements Tool {
     return value.getRightElement();
   }
 
-  private String fetchLine(long offset) throws IOException {
+  public String fetchLine(long offset) throws IOException {
     collection.seek(offset);
     BufferedReader reader = new BufferedReader(new InputStreamReader(collection));
 
-    return reader.readLine();
+    String d = reader.readLine();
+    return d.length() > 80 ? d.substring(0, 80) + "..." : d;
   }
 
   public static class Args {
