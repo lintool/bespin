@@ -1,7 +1,8 @@
 package io.bespin.scala.mapreduce.bigram
 
 
-import io.bespin.scala.util.{BaseConfiguredRunnable, Tokenizer}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredRunnable, MapReduceSugar}
+import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
 import org.apache.hadoop.mapreduce._

@@ -2,7 +2,8 @@ package io.bespin.scala.mapreduce.bigram
 
 import java.lang.Iterable
 
-import io.bespin.scala.util.{BaseConfiguredRunnable, Tokenizer}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredRunnable, MapReduceSugar}
+import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.output.{SequenceFileOutputFormat, TextOutputFormat}

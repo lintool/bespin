@@ -1,4 +1,4 @@
-package io.bespin.scala.util
+package io.bespin.scala.mapreduce.util
 
 import org.apache.hadoop.conf.Configured
 import org.apache.hadoop.util.{Tool, ToolRunner}
