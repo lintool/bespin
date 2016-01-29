@@ -16,6 +16,7 @@ import scala.collection.JavaConversions._
 object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredRunnable with Tokenizer with MapReduceSugar {
   private val log = Logger.getLogger(getClass.getName)
 
+  private val wildcard: String = "*"
   private val one: FloatWritable = 1.0f
 
   private object PairsMapper extends Mapper[LongWritable, Text, PairOfStrings, FloatWritable] {
@@ -27,7 +28,7 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredRunnable with T
         tokens.iterator.zip(tokens.tail.iterator).foreach {
           case (left, right) =>
             context.write((left, right), one)
-            context.write((left, "*"), one)
+            context.write((left, wildcard), one)
         }}
     }
   }
@@ -54,7 +55,7 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredRunnable with T
       var sum: Float = 0.0f
       values.foreach(v => sum += v)
 
-      if(key.getRightElement == "*") {
+      if(key.getRightElement == wildcard) {
         context.write(key, sum)
         marginal = sum
       } else {
@@ -82,10 +83,12 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredRunnable with T
       job("Bigram Relative Frequency - Pairs", conf)
         // Set the input path of the source text file
         .textFile(new Path(args.input()))
+        // Map and reduce over the data of the source file
         .map(PairsMapper)
         .combine(PairsCombiner)
         .partitionBy(PairsPartitioner)
         .reduce(PairsReducer)
+        // Set the output path, deleting anything already there
         .setOutputAsFile(new Path(args.output()), deleteExisting = true)
 
     val jobWithOutput = if(args.textOutput())
