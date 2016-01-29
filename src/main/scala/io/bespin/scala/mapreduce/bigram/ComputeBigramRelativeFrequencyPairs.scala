@@ -2,7 +2,7 @@ package io.bespin.scala.mapreduce.bigram
 
 import java.lang.Iterable
 
-import io.bespin.scala.mapreduce.util.{BaseConfiguredRunnable, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{FloatWritable, LongWritable, Text}
@@ -13,7 +13,7 @@ import tl.lin.data.pair.PairOfStrings
 
 import scala.collection.JavaConversions._
 
-object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredRunnable with Tokenizer with MapReduceSugar {
+object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
   private val log = Logger.getLogger(getClass.getName)
 
   private val wildcard: String = "*"

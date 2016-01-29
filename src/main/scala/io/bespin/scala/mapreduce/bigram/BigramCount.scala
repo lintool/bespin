@@ -1,7 +1,6 @@
 package io.bespin.scala.mapreduce.bigram
 
-
-import io.bespin.scala.mapreduce.util.{BaseConfiguredRunnable, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
@@ -11,7 +10,7 @@ import org.apache.log4j._
 
 import scala.collection.JavaConversions._
 
-object BigramCount extends BaseConfiguredRunnable with Tokenizer with MapReduceSugar {
+object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
   private val log = Logger.getLogger(getClass.getName)
 
   private object BigramMapper extends Mapper[LongWritable, Text, Text, IntWritable] {

@@ -2,9 +2,6 @@ package io.bespin.scala.mapreduce.bigram
 
 import org.rogach.scallop.ScallopConf
 
-/**
-  * Created by rm on 1/28/16.
-  */
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   lazy val input = opt[String](descr = "input path", required = true)
   lazy val output = opt[String](descr = "output path", required = true)
