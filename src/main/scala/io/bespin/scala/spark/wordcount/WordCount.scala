@@ -1,14 +1,12 @@
 package io.bespin.scala.spark.wordcount
 
 import io.bespin.scala.util.Tokenizer
-
-import collection.mutable.HashMap
-
-import org.apache.log4j._
 import org.apache.hadoop.fs._
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
+import org.apache.log4j._
+import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop._
+
+import scala.collection.mutable
 
 class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   mainOptions = Seq(input, output, reducers)
@@ -19,10 +17,10 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
 }
 
 object WordCount extends Tokenizer {
-  val log = Logger.getLogger(getClass().getName())
+  val log = Logger.getLogger(getClass.getName)
 
   def wcIter(iter: Iterator[String]): Iterator[(String, Int)] = {
-    val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
+    val counts = new mutable.HashMap[String, Int]() { override def default(key: String) = 0 }
 
     iter.flatMap(line => tokenize(line))
       .foreach { t => counts.put(t, counts(t) + 1) }

@@ -67,10 +67,6 @@ import com.google.common.collect.Maps;
 public class RunPageRankSchimmy extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(RunPageRankSchimmy.class);
 
-  private static enum PageRank {
-    nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
-  };
-
   // Mapper, no in-mapper combining.
   private static class MapClass extends
       Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
@@ -87,9 +83,9 @@ public class RunPageRankSchimmy extends Configured implements Tool {
       int massMessages = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         // Iterate over neighbors.
@@ -104,8 +100,8 @@ public class RunPageRankSchimmy extends Configured implements Tool {
       }
 
       // Bookkeeping.
-      context.getCounter(PageRank.nodes).increment(1);
-      context.getCounter(PageRank.massMessages).increment(massMessages);
+      context.getCounter(PageRankMessages.nodes).increment(1);
+      context.getCounter(PageRankMessages.massMessages).increment(massMessages);
     }
   }
 
@@ -115,15 +111,21 @@ public class RunPageRankSchimmy extends Configured implements Tool {
     // For buffering PageRank mass contributes keyed by destination node.
     private static HMapIF map = new HMapIF();
 
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+      // Clear the buffered values in case this mapper is re-used (as is the case when executing locally).
+      map.clear();
+    }
+
     public void map(IntWritable nid, PageRankNode node, Context context)
         throws IOException, InterruptedException {
       int massMessages = 0;
       int massMessagesSaved = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         // Iterate over neighbors.
@@ -143,9 +145,9 @@ public class RunPageRankSchimmy extends Configured implements Tool {
       }
 
       // Bookkeeping.
-      context.getCounter(PageRank.nodes).increment(1);
-      context.getCounter(PageRank.massMessages).increment(massMessages);
-      context.getCounter(PageRank.massMessagesSaved).increment(massMessagesSaved);
+      context.getCounter(PageRankMessages.nodes).increment(1);
+      context.getCounter(PageRankMessages.massMessages).increment(massMessages);
+      context.getCounter(PageRankMessages.massMessagesSaved).increment(massMessagesSaved);
     }
 
     @Override
@@ -319,7 +321,7 @@ public class RunPageRankSchimmy extends Configured implements Tool {
 
       // Emit!
       context.write(nid, hdfsNode);
-      context.getCounter(PageRank.massMessagesReceived).increment(massMessagesReceived);
+      context.getCounter(PageRankMessages.massMessagesReceived).increment(massMessagesReceived);
 
       hdfsAhead = false;
     }

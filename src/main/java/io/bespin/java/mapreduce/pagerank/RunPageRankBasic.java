@@ -60,10 +60,6 @@ import com.google.common.base.Preconditions;
 public class RunPageRankBasic extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(RunPageRankBasic.class);
 
-  private static enum PageRank {
-    nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
-  };
-
   // Mapper, no in-mapper combining.
   private static class MapClass extends
       Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
@@ -83,19 +79,19 @@ public class RunPageRankBasic extends Configured implements Tool {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(PageRankNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
       int massMessages = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
-        context.getCounter(PageRank.edges).increment(list.size());
+        context.getCounter(PageRankMessages.edges).increment(list.size());
 
         // Iterate over neighbors.
         for (int i = 0; i < list.size(); i++) {
@@ -111,8 +107,8 @@ public class RunPageRankBasic extends Configured implements Tool {
       }
 
       // Bookkeeping.
-      context.getCounter(PageRank.nodes).increment(1);
-      context.getCounter(PageRank.massMessages).increment(massMessages);
+      context.getCounter(PageRankMessages.nodes).increment(1);
+      context.getCounter(PageRankMessages.massMessages).increment(massMessages);
     }
   }
 
@@ -138,7 +134,7 @@ public class RunPageRankBasic extends Configured implements Tool {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(PageRankNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
@@ -146,12 +142,12 @@ public class RunPageRankBasic extends Configured implements Tool {
       int massMessagesSaved = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
-        context.getCounter(PageRank.edges).increment(list.size());
+        context.getCounter(PageRankMessages.edges).increment(list.size());
 
         // Iterate over neighbors.
         for (int i = 0; i < list.size(); i++) {
@@ -170,9 +166,9 @@ public class RunPageRankBasic extends Configured implements Tool {
       }
 
       // Bookkeeping.
-      context.getCounter(PageRank.nodes).increment(1);
-      context.getCounter(PageRank.massMessages).increment(massMessages);
-      context.getCounter(PageRank.massMessagesSaved).increment(massMessagesSaved);
+      context.getCounter(PageRankMessages.nodes).increment(1);
+      context.getCounter(PageRankMessages.massMessages).increment(massMessages);
+      context.getCounter(PageRankMessages.massMessagesSaved).increment(massMessagesSaved);
     }
 
     @Override
@@ -254,7 +250,7 @@ public class RunPageRankBasic extends Configured implements Tool {
 
         if (n.getType().equals(PageRankNode.Type.Structure)) {
           // This is the structure; update accordingly.
-          ArrayListOfIntsWritable list = n.getAdjacenyList();
+          ArrayListOfIntsWritable list = n.getAdjacencyList();
           structureReceived++;
 
           node.setAdjacencyList(list);
@@ -267,7 +263,7 @@ public class RunPageRankBasic extends Configured implements Tool {
 
       // Update the final accumulated PageRank mass.
       node.setPageRank(mass);
-      context.getCounter(PageRank.massMessagesReceived).increment(massMessagesReceived);
+      context.getCounter(PageRankMessages.massMessagesReceived).increment(massMessagesReceived);
 
       // Error checking.
       if (structureReceived == 1) {
@@ -280,7 +276,7 @@ public class RunPageRankBasic extends Configured implements Tool {
         // We get into this situation if there exists an edge pointing to a node which has no
         // corresponding node structure (i.e., PageRank mass was passed to a non-existent node)...
         // log and count but move on.
-        context.getCounter(PageRank.missingStructure).increment(1);
+        context.getCounter(PageRankMessages.missingStructure).increment(1);
         LOG.warn("No structure received for nodeid: " + nid.get() + " mass: "
             + massMessagesReceived);
         // It's important to note that we don't add the PageRank mass to total... if PageRank mass
@@ -416,7 +412,7 @@ public class RunPageRankBasic extends Configured implements Tool {
     LOG.info(" - end iteration: " + e);
     LOG.info(" - use combiner: " + useCombiner);
     LOG.info(" - use in-mapper combiner: " + useInmapCombiner);
-    LOG.info(" - user range partitioner: " + useRange);
+    LOG.info(" - use range partitioner: " + useRange);
 
     // Iterate PageRank.
     for (int i = s; i < e; i++) {
@@ -464,7 +460,7 @@ public class RunPageRankBasic extends Configured implements Tool {
     LOG.info(" - output: " + out);
     LOG.info(" - nodeCnt: " + numNodes);
     LOG.info(" - useCombiner: " + useCombiner);
-    LOG.info(" - useInmapCombiner: " + useInMapperCombiner);
+    LOG.info(" - useInMapCombiner: " + useInMapperCombiner);
     LOG.info("computed number of partitions: " + numPartitions);
 
     int numReduceTasks = numPartitions;
