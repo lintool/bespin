@@ -1,37 +1,45 @@
 package io.bespin.scala.mapreduce.util
 
+import java.lang.Iterable
+
 import io.bespin.scala.util.WritableConversions
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.io.{WritableComparable, LongWritable, Text}
+import org.apache.hadoop.io.{LongWritable, Text, WritableComparable}
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, TextInputFormat}
-import org.apache.hadoop.mapreduce.lib.output.{MapFileOutputFormat, SequenceFileOutputFormat, FileOutputFormat, TextOutputFormat}
+import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat, MapFileOutputFormat, SequenceFileOutputFormat, TextOutputFormat}
 
 import scala.language.{higherKinds, implicitConversions}
-import scala.reflect.runtime.universe.{TypeTag => TT, typeOf}
+import scala.reflect.runtime.universe.{TypeTag => TT, typeOf, typeTag}
 
-/**
-  * A decorator trait providing an implicit mirror belonging to the implementing class' classloader.
-  */
-trait WithMirror { self =>
-  implicit protected val typeMirror: reflect.runtime.universe.Mirror =
-    reflect.runtime.universe.runtimeMirror(self.getClass.getClassLoader)
+abstract class TypedMapper[KI,VI,KO:TT,VO:TT] extends Mapper[KI,VI,KO,VO] with WithTypedOutput[KO,VO] {
+
+  protected[util] final val kEv = typeTag[KO]
+  protected[util] final val vEv = typeTag[VO]
+
+  protected final type Context = Mapper[KI,VI,KO,VO]#Context
+
+  override def map(key: KI, value: VI, context: Context): Unit = super.map(key, value, context)
+
+  override def setup(context: Context): Unit = super.setup(context)
+
+  override def cleanup(context: Context): Unit = super.cleanup(context)
 }
 
-/**
-  * A decorator trait providing an implicit Class[_] object of the implementing class. Useful for
-  * calling Job.setJarByClass (which Hadoop uses to look up the jar of the class creating/running the job)
-  */
-trait WithCallingClass { self =>
-  implicit protected val thisClass: Class[_] = self.getClass
-}
+abstract class TypedReducer[KI,VI,KO:TT,VO:TT] extends Reducer[KI,VI,KO,VO] with WithTypedOutput[KO,VO] {
 
-/**
-  * A decorator trait providing a typed class symbol
-  */
-trait WrappedWithClazz[T] {
-  def clazz: Class[T]
+  protected[util] final val kEv = typeTag[KO]
+  protected[util] final val vEv = typeTag[VO]
+
+  protected final type Context = Reducer[KI,VI,KO,VO]#Context
+
+  override def reduce(key: KI, values: Iterable[VI], context: Context): Unit = super.reduce(key, values, context)
+
+  override def setup(context: Context): Unit = super.setup(context)
+
+  override def cleanup(context: Context): Unit = super.cleanup(context)
+
 }
 
 /**
@@ -43,8 +51,10 @@ trait WrappedWithClazz[T] {
   * @tparam KO Key Output type
   * @tparam VO Value Output type
   */
-case class WrappedMapper[KI:TT,VI:TT,KO:TT,VO:TT](m: Mapper[KI,VI,KO,VO]) extends WrappedWithClazz[Mapper[KI,VI,KO,VO]] { self =>
-  override def clazz: Class[Mapper[KI, VI, KO, VO]] = m.getClass.asInstanceOf[Class[Mapper[KI,VI,KO,VO]]]
+case class WrappedMapper[KI,VI,KO,VO](m: Mapper[KI,VI,KO,VO])(implicit val kEv: TT[KO], val vEv: TT[VO])
+  extends WithTypedOutput[KO,VO]
+    with WrappedWithClazz[Mapper[KI,VI,KO,VO]] { self =>
+  protected[util] val clazz: Class[Mapper[KI, VI, KO, VO]] = m.getClass.asInstanceOf[Class[Mapper[KI,VI,KO,VO]]]
 }
 
 /**
@@ -56,8 +66,9 @@ case class WrappedMapper[KI:TT,VI:TT,KO:TT,VO:TT](m: Mapper[KI,VI,KO,VO]) extend
   * @tparam KO Key Output type
   * @tparam VO Value Output type
   */
-case class WrappedReducer[KI:TT,VI:TT,KO:TT,VO:TT](r: Reducer[KI,VI,KO,VO]) extends WrappedWithClazz[Reducer[KI,VI,KO,VO]] {
-  override def clazz: Class[Reducer[KI, VI, KO, VO]] = r.getClass.asInstanceOf[Class[Reducer[KI,VI,KO,VO]]]
+case class WrappedReducer[KI,VI,KO,VO](r: Reducer[KI,VI,KO,VO])(implicit val kEv: TT[KO], val vEv: TT[VO]) extends WithTypedOutput[KO,VO]
+  with WrappedWithClazz[Reducer[KI,VI,KO,VO]] {
+  protected[util] val clazz: Class[Reducer[KI, VI, KO, VO]] = r.getClass.asInstanceOf[Class[Reducer[KI,VI,KO,VO]]]
 }
 
 /**
@@ -67,8 +78,9 @@ case class WrappedReducer[KI:TT,VI:TT,KO:TT,VO:TT](r: Reducer[KI,VI,KO,VO]) exte
   * @tparam KI Key Input type
   * @tparam VI Value Input type
   */
-case class WrappedPartitioner[KI:TT,VI:TT](p: Partitioner[KI,VI]) extends WrappedWithClazz[Partitioner[KI,VI]] {
-  override def clazz: Class[Partitioner[KI, VI]] = p.getClass.asInstanceOf[Class[Partitioner[KI,VI]]]
+case class WrappedPartitioner[KI,VI](p: Partitioner[KI,VI])(implicit val kEv: TT[KI], val vEv: TT[VI]) extends WithTypedOutput[KI,VI]
+  with WrappedWithClazz[Partitioner[KI,VI]] {
+  protected[util] val clazz: Class[Partitioner[KI, VI]] = p.getClass.asInstanceOf[Class[Partitioner[KI,VI]]]
 }
 
 /**
@@ -125,9 +137,9 @@ sealed trait OutputDefinition[KO,VO] extends HasJob {
   }
 }
 
-case class FileInputDefinition[KI:TT,VI:TT](baseJob: BaseJob,
-                                            path: Path,
-                                            inputFormat: Class[_<:FileInputFormat[KI,VI]]) extends InputDefinition[KI,VI] {
+case class FileInputDefinition[KI, VI](baseJob: BaseJob,
+                                       path: Path,
+                                       inputFormat: Class[_<:FileInputFormat[KI,VI]]) extends InputDefinition[KI,VI] {
   def job(implicit mirror: reflect.runtime.universe.Mirror) = {
     val jobIn = baseJob.job
     FileInputFormat.addInputPath(jobIn, path)
@@ -136,10 +148,10 @@ case class FileInputDefinition[KI:TT,VI:TT](baseJob: BaseJob,
   }
 }
 
-case class FileOutputDefinition[KO:TT,VO:TT](reduceStage: ReducedJob[_,_,KO,VO],
-                                             path: Path,
-                                             outputFormat: Class[_ <: FileOutputFormat[_,_]] = classOf[TextOutputFormat[KO,VO]],
-                                             deleteExisting: Boolean = true) extends OutputDefinition[KO,VO] {
+case class FileOutputDefinition[KO, VO](reduceStage: ReducedJob[_,_,KO,VO],
+                                        path: Path,
+                                        outputFormat: Class[_ <: FileOutputFormat[_,_]] = classOf[TextOutputFormat[KO,VO]],
+                                        deleteExisting: Boolean = true) extends OutputDefinition[KO,VO] {
   def job(implicit mirror: reflect.runtime.universe.Mirror) = {
     val jobIn = reduceStage.job
     FileOutputFormat.setOutputPath(jobIn, path)
@@ -168,10 +180,10 @@ case class FileOutputDefinition[KO:TT,VO:TT](reduceStage: ReducedJob[_,_,KO,VO],
   * @tparam KO Key Output type
   * @tparam VO Value Output type
   */
-case class MappedJob[KI: TT,VI:TT,KO:TT,VO:TT](inputDefinition: InputDefinition[KI,VI],
-                                               map: WrappedMapper[KI,VI,KO,VO],
-                                               combine: Option[WrappedReducer[KO,VO,KO,VO]] = None,
-                                               partitioner: Option[WrappedPartitioner[KO,VO]] = None)
+case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
+                                     map: WrappedMapper[KI,VI,KO,VO],
+                                     combine: Option[WrappedReducer[KO,VO,KO,VO]] = None,
+                                     partitioner: Option[WrappedPartitioner[KO,VO]] = None)
   extends HasJob {
 
   /**
@@ -187,7 +199,7 @@ case class MappedJob[KI: TT,VI:TT,KO:TT,VO:TT](inputDefinition: InputDefinition[
     *
     * @param p Wrapped partitioner object
     */
-  def partitionBy(p: WrappedPartitioner[KO,VO]): MappedJob[KI,VI,KO,VO] =
+  def partition(p: WrappedPartitioner[KO,VO]): MappedJob[KI,VI,KO,VO] =
     this.copy(partitioner = Option(p))
 
   /**
@@ -198,13 +210,13 @@ case class MappedJob[KI: TT,VI:TT,KO:TT,VO:TT](inputDefinition: InputDefinition[
     * @tparam RKO Reducer Key Output
     * @tparam RVO Reducer Value Output
     */
-  def reduce[RKO:TT,RVO:TT](reducer: WrappedReducer[KO,VO,RKO,RVO], numReduceTasks: Int = 1): ReducedJob[KO,VO,RKO,RVO] =
+  def reduce[RKO, RVO](reducer: WrappedReducer[KO,VO,RKO,RVO], numReduceTasks: Int = 1): ReducedJob[KO,VO,RKO,RVO] =
     ReducedJob[KO,VO,RKO,RVO](this, reduce = reducer, numReduceTasks)
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = inputDefinition.job
-    jobIn.setMapOutputKeyClass(mirror.runtimeClass(typeOf[KO].typeSymbol.asClass))
-    jobIn.setMapOutputValueClass(mirror.runtimeClass(typeOf[VO].typeSymbol.asClass))
+    jobIn.setMapOutputKeyClass(map.outputKeyType)
+    jobIn.setMapOutputValueClass(map.outputValueType)
     jobIn.setMapperClass(map.clazz)
     combine.foreach(c => jobIn.setCombinerClass(c.clazz))
     partitioner.foreach(p => jobIn.setPartitionerClass(p.clazz))
@@ -223,9 +235,9 @@ case class MappedJob[KI: TT,VI:TT,KO:TT,VO:TT](inputDefinition: InputDefinition[
   * @tparam KO Key Output type
   * @tparam VO Value Output type
   */
-case class ReducedJob[KI:TT,VI:TT,KO:TT,VO:TT](mapStage: MappedJob[_,_,KI,VI],
-                                               reduce: WrappedReducer[KI,VI,KO,VO],
-                                               numReduceTasks: Int = 1)
+case class ReducedJob[KI, VI, KO, VO](mapStage: MappedJob[_,_,KI,VI],
+                                      reduce: WrappedReducer[KI,VI,KO,VO],
+                                      numReduceTasks: Int = 1)
   extends HasJob {
 
   /**
@@ -242,12 +254,12 @@ case class ReducedJob[KI:TT,VI:TT,KO:TT,VO:TT](mapStage: MappedJob[_,_,KI,VI],
     * @param p Wrapped partitioner object to use as partitioner
     */
   def partitionBy(p: WrappedPartitioner[KI,VI]): ReducedJob[KI,VI,KO,VO] =
-    this.copy(mapStage = mapStage.partitionBy(p))
+    this.copy(mapStage = mapStage.partition(p))
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = mapStage.job
-    jobIn.setOutputKeyClass(mirror.runtimeClass(typeOf[KO].typeSymbol.asClass))
-    jobIn.setOutputValueClass(mirror.runtimeClass(typeOf[VO].typeSymbol.asClass))
+    jobIn.setOutputKeyClass(reduce.outputKeyType)
+    jobIn.setOutputValueClass(reduce.outputValueType)
     jobIn.setReducerClass(reduce.clazz)
     jobIn.setNumReduceTasks(numReduceTasks)
     jobIn
@@ -313,8 +325,8 @@ trait StageSyntax extends WrappingSyntax {
       * @tparam KI Key Input type of the file - Will determine the input key type of the Mapper stage
       * @tparam VI Value Input type of the file - Will determine the input value type of the Mapper stage
       */
-    def file[KI:TT,VI:TT](path: Path,
-                          inputFormat: Class[FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
+    def file[KI, VI](path: Path,
+                     inputFormat: Class[FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
       FileInputDefinition(job, path, inputFormat)
     }
 
@@ -337,7 +349,7 @@ trait StageSyntax extends WrappingSyntax {
       * @tparam KO Key Output type of the mapper
       * @tparam VO Value Output type of the mapper
       */
-    def map[KO:TT,VO:TT](map: WrappedMapper[KI,VI,KO,VO]) = MappedJob(inputStage, map)
+    def map[KO, VO](map: WrappedMapper[KI,VI,KO,VO]) = MappedJob(inputStage, map)
   }
 
   /**
@@ -348,7 +360,7 @@ trait StageSyntax extends WrappingSyntax {
     * @tparam KO Output key type of the reduce stage
     * @tparam VO Output value type of the reduce stage
     */
-  implicit class ReduceStageSyntax[KO:TT,VO:TT](reduceStage: ReducedJob[_,_,KO,VO]) {
+  implicit class ReduceStageSyntax[KO, VO](reduceStage: ReducedJob[_,_,KO,VO]) {
     /**
       * Bind the output path of the job to a file, and optionally delete the file(s) currently present
       * at that location
@@ -357,7 +369,7 @@ trait StageSyntax extends WrappingSyntax {
       * @param deleteExisting If true, deletes the contents of the output directory before running the job
       */
     def setOutputAsFile(path: Path, deleteExisting: Boolean = true): FileOutputDefinition[KO,VO] = {
-      FileOutputDefinition[KO,VO](reduceStage, path, deleteExisting = deleteExisting)
+      FileOutputDefinition(reduceStage, path, deleteExisting = deleteExisting)
     }
 
     /**
@@ -370,7 +382,7 @@ trait StageSyntax extends WrappingSyntax {
       */
     def saveAsTextFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                       (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
-      val jobWithOutput = FileOutputDefinition[KO,VO](
+      val jobWithOutput = FileOutputDefinition(
         reduceStage, path, outputFormat = classOf[TextOutputFormat[KO,VO]], deleteExisting)
       jobWithOutput.run(verbose)
     }
@@ -385,7 +397,7 @@ trait StageSyntax extends WrappingSyntax {
       */
     def saveAsSequenceFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                           (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
-      val jobWithOutput = FileOutputDefinition[KO,VO](
+      val jobWithOutput = FileOutputDefinition(
         reduceStage, path, outputFormat = classOf[SequenceFileOutputFormat[KO,VO]], deleteExisting)
       jobWithOutput.run(verbose)
     }
@@ -399,7 +411,7 @@ trait StageSyntax extends WrappingSyntax {
     * @tparam KO Output key type of the reduce stage. Must extend WritableComparable
     * @tparam VO Output value type of the reduce stage
     */
-  implicit class WritableComparableReduceStageSyntax[K,KO<:WritableComparable[K]:TT,VO:TT](reduceStage: ReducedJob[_,_,KO,VO]) {
+  implicit class WritableComparableReduceStageSyntax[K,KO<:WritableComparable[K],VO](reduceStage: ReducedJob[_,_,KO,VO]) {
 
     /**
       * Sets the output destination, configures output to be MapFileOutputFormat, and runs the MapReduce job immediately.
@@ -411,7 +423,7 @@ trait StageSyntax extends WrappingSyntax {
       */
     def saveAsMapFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                      (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
-      val jobWithOutput = FileOutputDefinition[KO,VO](
+      val jobWithOutput = FileOutputDefinition(
         reduceStage, path, outputFormat = classOf[MapFileOutputFormat], deleteExisting)
       jobWithOutput.run(verbose)
     }

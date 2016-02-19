@@ -2,11 +2,11 @@ package io.bespin.scala.mapreduce.bigram
 
 import java.lang.Iterable
 
-import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{FloatWritable, LongWritable, Text}
-import org.apache.hadoop.mapreduce.{Mapper, Partitioner, Reducer}
+import org.apache.hadoop.mapreduce.Partitioner
 import tl.lin.data.pair.PairOfStrings
 
 import scala.collection.JavaConversions._
@@ -16,9 +16,9 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
   private val wildcard: String = "*"
   private val one: FloatWritable = 1.0f
 
-  private object PairsMapper extends Mapper[LongWritable, Text, PairOfStrings, FloatWritable] {
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, PairOfStrings, FloatWritable]#Context): Unit = {
+  private object PairsMapper extends TypedMapper[LongWritable, Text, PairOfStrings, FloatWritable] {
+
+    override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value)
       if(tokens.length >= 2) {
         tokens.iterator.zip(tokens.tail.iterator).foreach {
@@ -26,24 +26,23 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
             context.write((left, right), one)
             context.write((left, wildcard), one)
         }}
+
     }
   }
 
   /**
     * Combiner object for pairs. Simply sums up the count of all (pair, count) keys sharing the same pair.
     */
-  private object PairsCombiner extends Reducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable] {
-    override def reduce(key: PairOfStrings, values: Iterable[FloatWritable],
-                        context: Reducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable]#Context): Unit = {
+  private object PairsCombiner extends TypedReducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable] {
+    override def reduce(key: PairOfStrings, values: Iterable[FloatWritable], context: Context): Unit = {
       context.write(key, values.foldLeft(0.0f)(_ + _))
     }
   }
 
-  private object PairsReducer extends Reducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable] {
+  private object PairsReducer extends TypedReducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable] {
     private var marginal: Float = 0.0f
 
-    override def reduce(key: PairOfStrings, values: Iterable[FloatWritable],
-                        context: Reducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable]#Context): Unit = {
+    override def reduce(key: PairOfStrings, values: Iterable[FloatWritable], context: Context): Unit = {
 
       val sum = values.foldLeft(0.0f)(_ + _)
 
@@ -76,7 +75,7 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
         // Map and reduce over the data of the source file
         .map(PairsMapper)
         .combine(PairsCombiner)
-        .partitionBy(PairsPartitioner)
+        .partition(PairsPartitioner)
         .reduce(PairsReducer, args.reducers())
 
     time {

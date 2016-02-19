@@ -1,11 +1,12 @@
 package io.bespin.scala.mapreduce.wordcount
 
-import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
-import org.apache.hadoop.mapreduce._
 import org.rogach.scallop._
+
+import java.lang.Iterable
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -20,29 +21,26 @@ class Conf(args: Seq[String]) extends ScallopConf(args) {
 
 object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
-  object MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+  object MyMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text, context: Context) = {
       tokenize(value).foreach(word => context.write(word, 1))
     }
   }
 
-  object MyMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
+  object MyMapperIMC extends TypedMapper[LongWritable, Text, Text, IntWritable] {
     val counts = new mutable.HashMap[String, Int]().withDefaultValue(0)
 
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+    override def map(key: LongWritable, value: Text, context: Context) = {
       tokenize(value).foreach(word => counts.put(word, counts(word) + 1))
     }
 
-    override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+    override def cleanup(context: Context) = {
       counts.foreach({ case (k, v) => context.write(k, v) })
     }
   }
 
-  object MyReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
-    override def reduce(key: Text, values: java.lang.Iterable[IntWritable],
-                        context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
+  object MyReducer extends TypedReducer[Text, IntWritable, Text, IntWritable] {
+    override def reduce(key: Text, values: Iterable[IntWritable], context: Context) = {
       val sum = values.asScala.foldLeft(0)(_ + _)
       context.write(key, sum)
     }

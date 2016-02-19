@@ -1,18 +1,16 @@
 package io.bespin.scala.mapreduce.bigram
 
-import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
-import org.apache.hadoop.mapreduce._
 
 import scala.collection.JavaConversions._
 
 object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
-  private object BigramMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+  private object BigramMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text, context: Context) = {
       val tokens = tokenize(value)
       if (tokens.length > 1)
         tokens.iterator.zip(tokens.tail.iterator)
@@ -21,9 +19,8 @@ object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar
     }
   }
 
-  private object BigramReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
-    override def reduce(key: Text, values: java.lang.Iterable[IntWritable],
-                        context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
+  private object BigramReducer extends TypedReducer[Text, IntWritable, Text, IntWritable] {
+    override def reduce(key: Text, values: java.lang.Iterable[IntWritable], context: Context) = {
       context.write(key, values.foldLeft(0)(_ + _))
     }
   }

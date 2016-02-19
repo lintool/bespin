@@ -2,11 +2,10 @@ package io.bespin.scala.mapreduce.bigram
 
 import java.lang.Iterable
 
-import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar}
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
-import org.apache.hadoop.mapreduce.{Mapper, Reducer}
 import tl.lin.data.map.HMapStFW
 
 import scala.collection.JavaConversions._
@@ -14,9 +13,8 @@ import scala.collection.mutable
 
 object ComputeBigramRelativeFrequencyStripes extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
-  private object StripesMapper extends Mapper[LongWritable, Text, Text, HMapStFW] {
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, Text, HMapStFW]#Context): Unit = {
+  private object StripesMapper extends TypedMapper[LongWritable, Text, Text, HMapStFW] {
+    override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value)
       val stripes: mutable.Map[String, HMapStFW] = mutable.HashMap()
       if(tokens.length >= 2) {
@@ -30,18 +28,16 @@ object ComputeBigramRelativeFrequencyStripes extends BaseConfiguredTool with Tok
     }
   }
 
-  private object StripesCombiner extends Reducer[Text, HMapStFW, Text, HMapStFW] {
-    override def reduce(key: Text, values: Iterable[HMapStFW],
-                        context: Reducer[Text, HMapStFW, Text, HMapStFW]#Context): Unit = {
+  private object StripesCombiner extends TypedReducer[Text, HMapStFW, Text, HMapStFW] {
+    override def reduce(key: Text, values: Iterable[HMapStFW], context: Context): Unit = {
       val newMap = new HMapStFW
       values.foreach(v => newMap.plus(v))
       context.write(key, newMap)
     }
   }
 
-  private object StripesReducer extends Reducer[Text, HMapStFW, Text, HMapStFW] {
-    override def reduce(key: Text, values: Iterable[HMapStFW],
-                        context: Reducer[Text, HMapStFW, Text, HMapStFW]#Context): Unit = {
+  private object StripesReducer extends TypedReducer[Text, HMapStFW, Text, HMapStFW] {
+    override def reduce(key: Text, values: Iterable[HMapStFW], context: Context): Unit = {
       val finalMap: HMapStFW = new HMapStFW
       values.foreach(v => finalMap.plus(v))
 
