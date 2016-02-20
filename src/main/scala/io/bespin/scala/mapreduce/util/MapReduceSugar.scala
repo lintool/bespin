@@ -13,6 +13,15 @@ import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat, MapFileOutputFo
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.runtime.universe.{TypeTag => TT, typeOf, typeTag}
 
+/**
+  * TypedMapper provides a scala wrapper to the Mapper class which reduces boilerplate and captures the run-time
+  * output key and value types.
+  *
+  * @tparam KI Key Input type
+  * @tparam VI Value Input type
+  * @tparam KO Key Output type
+  * @tparam VO Value Output type
+  */
 abstract class TypedMapper[KI,VI,KO:TT,VO:TT] extends Mapper[KI,VI,KO,VO] with WithTypedOutput[KO,VO] {
 
   protected[util] final val kEv = typeTag[KO]
@@ -27,6 +36,15 @@ abstract class TypedMapper[KI,VI,KO:TT,VO:TT] extends Mapper[KI,VI,KO,VO] with W
   override def cleanup(context: Context): Unit = super.cleanup(context)
 }
 
+/**
+  * TypedReducer provides a scala wrapper to the Reducer class which reduces boilerplate and captures the run-time
+  * output key and value types.
+  *
+  * @tparam KI Key Input type
+  * @tparam VI Value Input type
+  * @tparam KO Key Output type
+  * @tparam VO Value Output type
+  */
 abstract class TypedReducer[KI,VI,KO:TT,VO:TT] extends Reducer[KI,VI,KO,VO] with WithTypedOutput[KO,VO] {
 
   protected[util] final val kEv = typeTag[KO]
@@ -411,7 +429,7 @@ trait StageSyntax extends WrappingSyntax {
     * @tparam KO Output key type of the reduce stage. Must extend WritableComparable
     * @tparam VO Output value type of the reduce stage
     */
-  implicit class WritableComparableReduceStageSyntax[K,KO<:WritableComparable[K],VO](reduceStage: ReducedJob[_,_,KO,VO]) {
+  implicit class WritableComparableReduceStageSyntax[KO<:WritableComparable[_],VO](reduceStage: ReducedJob[_,_,KO,VO]) {
 
     /**
       * Sets the output destination, configures output to be MapFileOutputFormat, and runs the MapReduce job immediately.

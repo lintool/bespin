@@ -11,6 +11,17 @@ import java.lang.Iterable
 
 import scala.collection.JavaConverters._
 
+/**
+  * Implementation of the "pairs" algorithm for computing co-occurrence matrices from a large text
+  * collection. This algorithm is described in Chapter 3 of "Data-Intensive Text Processing with
+  * MapReduce" by Lin &amp; Dyer, as well as the following paper:
+  *
+  * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the Masses: A Case Study in
+  * Computing Word Co-occurrence Matrices with MapReduce.</b> <i>Proceedings of the 2008 Conference
+  * on Empirical Methods in Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
+  *
+  * @see [[io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs]]
+  */
 object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
   private object MyMapper extends TypedMapper[LongWritable, Text, PairOfStrings, IntWritable] {
@@ -22,17 +33,16 @@ object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer 
 
     override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value).toArray
-      var i, j = 0
-      while(i < tokens.length) {
-        j = Math.max(i - windowSize, 0)
-        while(j < Math.min(i + windowSize + 1, tokens.length)) {
+      tokens.zipWithIndex.foreach { case (token, i) =>
+        val start = Math.max(i - windowSize, 0)
+        val end = Math.min(i + windowSize + 1, tokens.length)
+        (start until end).foreach { j =>
           if(i != j)
-            context.write((tokens(i), tokens(j)), 1)
-          j += 1
+            context.write((token, tokens(j)), 1)
         }
-        i += 1
       }
     }
+
   }
 
   private object MyReducer extends TypedReducer[PairOfStrings, IntWritable, PairOfStrings, IntWritable] {
@@ -61,7 +71,7 @@ object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer 
     config.setInt("window", args.window())
 
     val thisJob =
-      job("Bigram Relative Frequency - Pairs", config)
+      job("Cooccurrence Matrix - Pairs", config)
         // Set the input path of the source text file
         .textFile(new Path(args.input()))
         // Map and reduce over the data of the source file

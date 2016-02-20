@@ -10,6 +10,17 @@ import tl.lin.data.map.HMapStIW
 
 import scala.collection.JavaConverters._
 
+/**
+  * Implementation of the "stripes" algorithm for computing co-occurrence matrices from a large text
+  * collection. This algorithm is described in Chapter 3 of "Data-Intensive Text Processing with
+  * MapReduce" by Lin &amp; Dyer, as well as the following paper:
+  *
+  * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the Masses: A Case Study in
+  * Computing Word Co-occurrence Matrices with MapReduce.</b> <i>Proceedings of the 2008 Conference
+  * on Empirical Methods in Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
+  *
+  * @see [[io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes]]
+  */
 object ComputeCooccurrenceMatrixStripes extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
   private object MyMapper extends TypedMapper[LongWritable, Text, Text, HMapStIW] {
@@ -23,17 +34,15 @@ object ComputeCooccurrenceMatrixStripes extends BaseConfiguredTool with Tokenize
     override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value).toArray
 
-      var i, j = 0
-      while(i < tokens.length) {
-        j = Math.max(i - windowSize, 0)
+      tokens.zipWithIndex.foreach { case (token, i) =>
         map.clear()
-        while(j < Math.min(i + windowSize + 1, tokens.length)) {
+        val start = Math.max(i - windowSize, 0)
+        val end = Math.min(i + windowSize + 1, tokens.length)
+        (start until end).foreach { j =>
           if(i != j)
             map.increment(tokens(j))
-          j += 1
         }
-        context.write(tokens(i), map)
-        i += 1
+        context.write(token, map)
       }
     }
 
@@ -62,7 +71,7 @@ object ComputeCooccurrenceMatrixStripes extends BaseConfiguredTool with Tokenize
     config.setInt("window", args.window())
 
     val thisJob =
-      job("Bigram Relative Frequency - Pairs", config)
+      job("Cooccurrence Matrix - Stripes", config)
         // Set the input path of the source text file
         .textFile(new Path(args.input()))
         // Map and reduce over the data of the source file

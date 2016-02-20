@@ -1,7 +1,7 @@
 package io.bespin.scala.util
 
 import org.apache.hadoop.io._
-import tl.lin.data.pair.PairOfStrings
+import tl.lin.data.pair.{PairOfWritables, PairOfInts, PairOfStrings}
 
 import scala.language.implicitConversions
 
@@ -27,6 +27,14 @@ trait WritableConversions {
   implicit def TextUnbox(v: Text): String = v.toString
   implicit def TextBox  (v: String): Text = new Text(v)
 
+  implicit def PairOfWritablesUnbox[L <: Writable, R <: Writable](v: PairOfWritables[L, R]): (L, R) =
+    (v.getLeftElement, v.getRightElement)
+  implicit def PairOfWritablesBox[L <: Writable, R <: Writable](v: (L, R)): PairOfWritables[L, R] =
+    new PairOfWritables[L,R](v._1, v._2)
+
   implicit def PairOfStringsUnbox(v: PairOfStrings): (String, String) = (v.getLeftElement, v.getRightElement)
   implicit def PairOfStringsBox(v: (String, String)): PairOfStrings = new PairOfStrings(v._1, v._2)
+
+  implicit def PairOfIntsUnbox(v: PairOfInts): (Int, Int) = (v.getLeftElement, v.getRightElement)
+  implicit def PairOfIntsBox(v: (Int, Int)): PairOfInts = new PairOfInts(v._1, v._2)
 }
