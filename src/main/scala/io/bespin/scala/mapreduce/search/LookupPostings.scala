@@ -30,9 +30,6 @@ object LookupPostings extends WritableConversions {
     val w = Option(reader.get(term, value))
 
     w match {
-      case None =>
-        println(s"\nThe term '$term' does not appear in the collection")
-
       case Some(t) =>
         val postings = value.getRightElement
         println(s"\nComplete postings list for '$term':")
@@ -55,6 +52,9 @@ object LookupPostings extends WritableConversions {
         println(s"\nHistogram of tf values for '$term'")
         hist.iterator().asScala.foreach(pair => println(pair.getLeftElement + "\t" + pair.getRightElement))
         collection.close()
+
+      case None =>
+        println(s"\nThe term '$term' does not appear in the collection")
     }
 
   }

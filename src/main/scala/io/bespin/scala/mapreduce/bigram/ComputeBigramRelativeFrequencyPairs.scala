@@ -1,15 +1,11 @@
 package io.bespin.scala.mapreduce.bigram
 
-import java.lang.Iterable
-
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{FloatWritable, LongWritable, Text}
 import org.apache.hadoop.mapreduce.Partitioner
 import tl.lin.data.pair.PairOfStrings
-
-import scala.collection.JavaConversions._
 
 object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 

@@ -1,7 +1,5 @@
 package io.bespin.scala.mapreduce.util
 
-import java.lang.Iterable
-
 import io.bespin.scala.util.WritableConversions
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -10,6 +8,7 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, TextInputFormat}
 import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat, MapFileOutputFormat, SequenceFileOutputFormat, TextOutputFormat}
 
+import scala.collection.JavaConverters._
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.runtime.universe.{TypeTag => TT, typeOf, typeTag}
 
@@ -52,7 +51,10 @@ abstract class TypedReducer[KI,VI,KO:TT,VO:TT] extends Reducer[KI,VI,KO,VO] with
 
   protected final type Context = Reducer[KI,VI,KO,VO]#Context
 
-  override def reduce(key: KI, values: Iterable[VI], context: Context): Unit = super.reduce(key, values, context)
+  /** Final overridden reduce method which handles conversion of 'values' to a scala Iterable */
+  override final def reduce(key: KI, values: java.lang.Iterable[VI], context: Context): Unit = reduce(key, values.asScala, context)
+
+  def reduce(key: KI, values: Iterable[VI], context: Context): Unit = super.reduce(key, values.asJava, context)
 
   override def setup(context: Context): Unit = super.setup(context)
 

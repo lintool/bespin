@@ -1,14 +1,10 @@
 package io.bespin.scala.mapreduce.cooccur
 
-import java.lang.Iterable
-
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 import tl.lin.data.map.HMapStIW
-
-import scala.collection.JavaConverters._
 
 /**
   * Implementation of the "stripes" algorithm for computing co-occurrence matrices from a large text
@@ -51,9 +47,8 @@ object ComputeCooccurrenceMatrixStripes extends BaseConfiguredTool with Tokenize
   private object MyReducer extends TypedReducer[Text, HMapStIW, Text, HMapStIW] {
 
     override def reduce(key: Text, values: Iterable[HMapStIW], context: Context): Unit = {
-      val iter = values.iterator().asScala
       val map = new HMapStIW
-      iter.foreach { map.plus }
+      values.foreach { map.plus }
       context.write(key, map)
     }
 

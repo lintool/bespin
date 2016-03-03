@@ -1,6 +1,5 @@
 package io.bespin.scala.mapreduce.search
 
-import java.lang.Iterable
 import java.util.Collections
 
 import io.bespin.scala.mapreduce.util.{TypedReducer, TypedMapper, MapReduceSugar, BaseConfiguredTool}
@@ -38,7 +37,7 @@ object BuildInvertedIndex extends BaseConfiguredTool with Tokenizer with MapRedu
 
   private object MyReducer extends TypedReducer[Text, PairOfInts, Text, IndexRow] {
     override def reduce(key: Text, values: Iterable[PairOfInts], context: Context): Unit = {
-      val iter = values.iterator().asScala
+      val iter = values.iterator
 
       val postings = new ArrayListWritable[PairOfInts]()
       while(iter.hasNext) {

@@ -7,10 +7,6 @@ import org.apache.hadoop.io.{IntWritable, LongWritable, Text}
 import org.apache.hadoop.mapreduce.Partitioner
 import tl.lin.data.pair.PairOfStrings
 
-import java.lang.Iterable
-
-import scala.collection.JavaConverters._
-
 /**
   * Implementation of the "pairs" algorithm for computing co-occurrence matrices from a large text
   * collection. This algorithm is described in Chapter 3 of "Data-Intensive Text Processing with
@@ -46,12 +42,9 @@ object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer 
   }
 
   private object MyReducer extends TypedReducer[PairOfStrings, IntWritable, PairOfStrings, IntWritable] {
-
     override def reduce(key: PairOfStrings, values: Iterable[IntWritable], context: Context): Unit = {
-      val iter = values.iterator().asScala
-      context.write(key, iter.foldLeft(0)(_ + _))
+      context.write(key, values.foldLeft(0)(_ + _))
     }
-
   }
 
   private object MyPartitioner extends Partitioner[PairOfStrings, IntWritable] {

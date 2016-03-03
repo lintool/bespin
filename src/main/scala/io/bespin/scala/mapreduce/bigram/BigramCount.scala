@@ -5,12 +5,10 @@ import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
 
-import scala.collection.JavaConversions._
-
 object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
   private object BigramMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
-    override def map(key: LongWritable, value: Text, context: Context) = {
+    override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value)
       if (tokens.length > 1)
         tokens.iterator.zip(tokens.tail.iterator)
@@ -20,7 +18,7 @@ object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar
   }
 
   private object BigramReducer extends TypedReducer[Text, IntWritable, Text, IntWritable] {
-    override def reduce(key: Text, values: java.lang.Iterable[IntWritable], context: Context) = {
+    override def reduce(key: Text, values: Iterable[IntWritable], context: Context): Unit = {
       context.write(key, values.foldLeft(0)(_ + _))
     }
   }

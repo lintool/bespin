@@ -6,9 +6,6 @@ import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
 import org.rogach.scallop._
 
-import java.lang.Iterable
-
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
@@ -41,7 +38,7 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
   object MyReducer extends TypedReducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: Iterable[IntWritable], context: Context) = {
-      val sum = values.asScala.foldLeft(0)(_ + _)
+      val sum = values.foldLeft(0)(_ + _)
       context.write(key, sum)
     }
   }

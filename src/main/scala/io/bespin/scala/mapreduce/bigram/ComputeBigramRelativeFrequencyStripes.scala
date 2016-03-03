@@ -1,7 +1,5 @@
 package io.bespin.scala.mapreduce.bigram
 
-import java.lang.Iterable
-
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
 import org.apache.hadoop.fs.Path
