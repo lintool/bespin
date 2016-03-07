@@ -1,6 +1,6 @@
 package io.bespin.scala.mapreduce.util
 
-import io.bespin.scala.util.WritableConversions
+import io.bespin.scala.util.{PairWritableConversions, WritableConversions}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.{LongWritable, Text, WritableComparable}
@@ -461,4 +461,5 @@ trait MapReduceSugar
     with WithCallingClass
     with WithMirror
     with WritableConversions
+    with PairWritableConversions
 

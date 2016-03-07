@@ -36,7 +36,7 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
   }
 
   private object PairsReducer extends TypedReducer[PairOfStrings, FloatWritable, PairOfStrings, FloatWritable] {
-    private var marginal: Float = 0.0f
+    private var marginal: Float = _
 
     override def reduce(key: PairOfStrings, values: Iterable[FloatWritable], context: Context): Unit = {
 
