@@ -45,6 +45,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <scala.version>2.10.4</scala.version>
+    <hbase.version>0.98.16-hadoop2</hbase.version>
     <!-- find the versions in http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_vd_cdh5_maven_repo.html -->
     <hadoop.version>2.6.0-cdh5.5.0</hadoop.version>
     <spark.version>1.5.0-cdh5.5.0</spark.version>
@@ -125,6 +126,16 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
       <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-client</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>  <!-- Needed for using MapReduce w/ HBase -->
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-server</artifactId>
+      <version>${hbase.version}</version>
     </dependency>
     <dependency>
       <groupId>args4j</groupId>
