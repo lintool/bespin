@@ -33,7 +33,7 @@ public class HBaseWordCountFetch extends Configured implements Tool {
     @Option(name = "-term", metaVar = "[term]", required = true, usage = "term to look up")
     public String term;
 
-    @Option(name = "-table", metaVar = "[name]", required = true, usage = "output path")
+    @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table")
     public String table;
 
     @Option(name = "-config", metaVar = "[path]", required = true, usage = "HBase config")
