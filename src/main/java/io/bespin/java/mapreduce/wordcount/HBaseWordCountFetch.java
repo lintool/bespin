@@ -56,7 +56,7 @@ public class HBaseWordCountFetch extends Configured implements Tool {
     }
 
     Configuration conf = getConf();
-    conf.addResource(new Path("/home/jimmylin/hbase-0.98.16-hadoop2/conf/hbase-site.xml"));
+    conf.addResource(new Path(args.config));
 
     Configuration hbaseConfig = HBaseConfiguration.create(conf);
     HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
