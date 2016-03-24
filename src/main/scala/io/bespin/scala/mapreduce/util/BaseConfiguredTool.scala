@@ -1,6 +1,6 @@
 package io.bespin.scala.mapreduce.util
 
-import org.apache.hadoop.conf.Configured
+import org.apache.hadoop.conf.{Configuration, Configured}
 import org.apache.hadoop.util.{ToolRunner, Tool}
 import org.apache.log4j._
 
@@ -8,6 +8,9 @@ import org.apache.log4j._
   * Base trait for creating entry points for MapReduce jobs
   */
 trait BaseConfiguredTool extends Configured with Tool { self =>
+  /** Initialize configuration */
+  setConf(new Configuration())
+
   protected lazy val log = Logger.getLogger(self.getClass)
 
   /**

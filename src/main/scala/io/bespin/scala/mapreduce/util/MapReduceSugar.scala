@@ -35,6 +35,14 @@ abstract class TypedMapper[KI,VI,KO:TT,VO:TT] extends Mapper[KI,VI,KO,VO] with W
   override def cleanup(context: Context): Unit = super.cleanup(context)
 }
 
+object TypedMapper {
+  /**
+    * The null mapper performs no map operations, but maintains the type-safety of the operation
+    * chain.
+    */
+  def nullMapper[KO:TT,VO:TT]: TypedMapper[KO,VO,KO,VO] = new TypedMapper[KO,VO,KO,VO] {}
+}
+
 /**
   * TypedReducer provides a scala wrapper to the Reducer class which reduces boilerplate and captures the run-time
   * output key and value types.
@@ -60,6 +68,14 @@ abstract class TypedReducer[KI,VI,KO:TT,VO:TT] extends Reducer[KI,VI,KO,VO] with
 
   override def cleanup(context: Context): Unit = super.cleanup(context)
 
+}
+
+object TypedReducer {
+  /**
+    * The null reducer performs no reduce operations, but maintains the type-safety of the operation
+    * chain.
+    */
+  def nullReducer[KO:TT,VO:TT]: TypedReducer[KO,VO,KO,VO] = new TypedReducer[KO,VO,KO,VO] {}
 }
 
 /**
@@ -168,12 +184,12 @@ case class FileInputDefinition[KI, VI](baseJob: BaseJob,
   }
 }
 
-case class FileOutputDefinition[KO, VO](reduceStage: ReducedJob[_,_,KO,VO],
+case class FileOutputDefinition[KO, VO](stage: HasJob with WithTypedOutput[KO,VO],
                                         path: Path,
                                         outputFormat: Class[_ <: FileOutputFormat[_,_]] = classOf[TextOutputFormat[KO,VO]],
                                         deleteExisting: Boolean = true) extends OutputDefinition[KO,VO] {
   def job(implicit mirror: reflect.runtime.universe.Mirror) = {
-    val jobIn = reduceStage.job
+    val jobIn = stage.job
     FileOutputFormat.setOutputPath(jobIn, path)
     jobIn.setOutputFormatClass(outputFormat)
     if(deleteExisting)
@@ -204,7 +220,7 @@ case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
                                      map: WrappedMapper[KI,VI,KO,VO],
                                      combine: Option[WrappedReducer[KO,VO,KO,VO]] = None,
                                      partitioner: Option[WrappedPartitioner[KO,VO]] = None)
-  extends HasJob {
+  extends HasJob with WithTypedOutput[KO, VO] {
 
   /**
     * Creates a copy of this stage with the combiner set
@@ -233,6 +249,13 @@ case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
   def reduce[RKO, RVO](reducer: WrappedReducer[KO,VO,RKO,RVO], numReduceTasks: Int = 1): ReducedJob[KO,VO,RKO,RVO] =
     ReducedJob[KO,VO,RKO,RVO](this, reduce = reducer, numReduceTasks)
 
+  /**
+    * Creates a "reduce" stage with no reducer class, and the specified number of reducer splits
+    * @param numReduceTasks Number of reduce tasks (default = 1)
+    */
+  def reduce(numReduceTasks: Int = 1)(implicit kt: TT[KO], tt: TT[VO]): ReducedJob[KO,VO,KO,VO] =
+    ReducedJob[KO,VO,KO,VO](this, reduce = WrappedReducer(TypedReducer.nullReducer[KO,VO]), numReduceTasks)
+
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = inputDefinition.job
     jobIn.setMapOutputKeyClass(map.outputKeyType)
@@ -242,6 +265,9 @@ case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
     partitioner.foreach(p => jobIn.setPartitionerClass(p.clazz))
     jobIn
   }
+
+  override protected[util] val kEv: TT[KO] = map.kEv
+  override protected[util] val vEv: TT[VO] = map.vEv
 }
 
 /**
@@ -258,7 +284,7 @@ case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
 case class ReducedJob[KI, VI, KO, VO](mapStage: MappedJob[_,_,KI,VI],
                                       reduce: WrappedReducer[KI,VI,KO,VO],
                                       numReduceTasks: Int = 1)
-  extends HasJob {
+  extends HasJob with WithTypedOutput[KO, VO] {
 
   /**
     * Specify the combiner behaviour (this creates a new copy of the "map" dependency)
@@ -285,6 +311,8 @@ case class ReducedJob[KI, VI, KO, VO](mapStage: MappedJob[_,_,KI,VI],
     jobIn
   }
 
+  override protected[util] val kEv: TT[KO] = reduce.kEv
+  override protected[util] val vEv: TT[VO] = reduce.vEv
 }
 
 /**
@@ -346,7 +374,7 @@ trait StageSyntax extends WrappingSyntax {
       * @tparam VI Value Input type of the file - Will determine the input value type of the Mapper stage
       */
     def file[KI, VI](path: Path,
-                     inputFormat: Class[FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
+                     inputFormat: Class[_<:FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
       FileInputDefinition(job, path, inputFormat)
     }
 
@@ -373,14 +401,14 @@ trait StageSyntax extends WrappingSyntax {
   }
 
   /**
-    * Set of syntax operations which are valid only on "reduce" stages. These operations are mostly concerned with
+    * Set of syntax operations which are valid only on "output" stages. These operations are mostly concerned with
     * determining the output location and format for the job.
     *
-    * @param reduceStage Input "reduce" stage
-    * @tparam KO Output key type of the reduce stage
-    * @tparam VO Output value type of the reduce stage
+    * @param outputStage Input "output" stage (usually a reduce stage, but can be a map with no reduce)
+    * @tparam KO Output key type of the output stage
+    * @tparam VO Output value type of the output stage
     */
-  implicit class ReduceStageSyntax[KO, VO](reduceStage: ReducedJob[_,_,KO,VO]) {
+  implicit class OutputStageSyntax[KO, VO](outputStage: HasJob with WithTypedOutput[KO,VO]) {
     /**
       * Bind the output path of the job to a file, and optionally delete the file(s) currently present
       * at that location
@@ -389,7 +417,7 @@ trait StageSyntax extends WrappingSyntax {
       * @param deleteExisting If true, deletes the contents of the output directory before running the job
       */
     def setOutputAsFile(path: Path, deleteExisting: Boolean = true): FileOutputDefinition[KO,VO] = {
-      FileOutputDefinition(reduceStage, path, deleteExisting = deleteExisting)
+      FileOutputDefinition(outputStage, path, deleteExisting = deleteExisting)
     }
 
     /**
@@ -403,7 +431,7 @@ trait StageSyntax extends WrappingSyntax {
     def saveAsTextFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                       (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
       val jobWithOutput = FileOutputDefinition(
-        reduceStage, path, outputFormat = classOf[TextOutputFormat[KO,VO]], deleteExisting)
+        outputStage, path, outputFormat = classOf[TextOutputFormat[KO,VO]], deleteExisting)
       jobWithOutput.run(verbose)
     }
 
@@ -418,7 +446,7 @@ trait StageSyntax extends WrappingSyntax {
     def saveAsSequenceFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                           (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
       val jobWithOutput = FileOutputDefinition(
-        reduceStage, path, outputFormat = classOf[SequenceFileOutputFormat[KO,VO]], deleteExisting)
+        outputStage, path, outputFormat = classOf[SequenceFileOutputFormat[KO,VO]], deleteExisting)
       jobWithOutput.run(verbose)
     }
   }

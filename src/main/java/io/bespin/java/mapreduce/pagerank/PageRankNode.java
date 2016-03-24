@@ -56,7 +56,7 @@ public class PageRankNode implements Writable {
     this.nodeid = n;
   }
 
-  public ArrayListOfIntsWritable getAdjacenyList() {
+  public ArrayListOfIntsWritable getAdjacencyList() {
     return adjacenyList;
   }
 

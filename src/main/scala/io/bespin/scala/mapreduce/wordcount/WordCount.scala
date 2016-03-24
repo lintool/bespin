@@ -8,14 +8,6 @@ import org.rogach.scallop._
 
 import scala.collection.mutable
 
-class Conf(args: Seq[String]) extends ScallopConf(args) {
-  mainOptions = Seq(input, output, reducers)
-  val input = opt[String](descr = "input path", required = true)
-  val output = opt[String](descr = "output path", required = true)
-  val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
-  val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
-}
-
 object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
   object MyMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
@@ -41,6 +33,14 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
       val sum = values.foldLeft(0)(_ + _)
       context.write(key, sum)
     }
+  }
+
+  private class Conf(args: Seq[String]) extends ScallopConf(args) {
+    mainOptions = Seq(input, output, reducers)
+    val input = opt[String](descr = "input path", required = true)
+    val output = opt[String](descr = "output path", required = true)
+    val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
+    val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
   }
 
   override def run(argv: Array[String]) : Int = {

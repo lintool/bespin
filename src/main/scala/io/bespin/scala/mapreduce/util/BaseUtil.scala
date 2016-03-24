@@ -21,17 +21,17 @@ trait WithCallingClass { self =>
 /**
   * An interface which provides the runtime types of its key and value classes
   */
-trait WithTypedOutput[KO, VO] extends WithMirror {
+trait WithTypedOutput[KO, VO] {
 
   protected[util] val kEv: TT[KO]
 
   protected[util] val vEv: TT[VO]
 
-  protected[util] lazy val outputKeyType: typeMirror.universe.RuntimeClass =
-    typeMirror.runtimeClass(kEv.tpe.typeSymbol.asClass)
+  protected[util] def outputKeyType(implicit mirror: reflect.runtime.universe.Mirror): mirror.universe.RuntimeClass =
+    mirror.runtimeClass(kEv.tpe.typeSymbol.asClass)
 
-  protected[util] lazy val outputValueType: typeMirror.universe.RuntimeClass =
-    typeMirror.runtimeClass(vEv.tpe.typeSymbol.asClass)
+  protected[util] def outputValueType(implicit mirror: reflect.runtime.universe.Mirror): mirror.universe.RuntimeClass =
+    mirror.runtimeClass(vEv.tpe.typeSymbol.asClass)
 
 }
 
