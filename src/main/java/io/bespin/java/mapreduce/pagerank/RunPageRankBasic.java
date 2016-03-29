@@ -122,6 +122,13 @@ public class RunPageRankBasic extends Configured implements Tool {
     private static final PageRankNode intermediateStructure = new PageRankNode();
 
     @Override
+    public void setup(Context context) throws IOException {
+      // Note that this is needed for running in local mode due to mapper reuse.
+      // We wouldn't need this is distributed mode.
+      map.clear();
+    }
+
+    @Override
     public void map(IntWritable nid, PageRankNode node, Context context)
         throws IOException, InterruptedException {
       // Pass along node structure.

@@ -34,7 +34,7 @@ public class WordCount extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(WordCount.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
-  private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+  public static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
     // Reuse objects to save overhead of object creation.
     private final static IntWritable ONE = new IntWritable(1);
     private final static Text WORD = new Text();
@@ -53,7 +53,7 @@ public class WordCount extends Configured implements Tool {
     }
   }
 
-  private static class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
+  public static class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
     private final HashMap<String, Integer> counts = new HashMap<String, Integer>();
 
     @Override
@@ -87,7 +87,7 @@ public class WordCount extends Configured implements Tool {
   }
 
   // Reducer: sums up all the counts.
-  private static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+  public static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
     // Reuse objects.
     private final static IntWritable SUM = new IntWritable();
 
