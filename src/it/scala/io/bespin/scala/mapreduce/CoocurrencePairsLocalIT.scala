@@ -11,7 +11,7 @@ abstract class CoocurrencePairsLocalIT(override val url: String)
     case tupleRegex(l, r) => ((l, r), value.toLong)
   }
 
-  "Cooccurrence-pairs" should "get correct co-occurrences for (the, of)" in programOutput { map =>
+  s"Cooccurrence-pairs:$suiteName" should "get correct co-occurrences for (the, of)" in programOutput { map =>
     map(("the", "of")) shouldBe 5974
   }
 

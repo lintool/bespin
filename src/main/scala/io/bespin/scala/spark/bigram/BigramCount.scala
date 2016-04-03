@@ -16,7 +16,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
 }
 
 object BigramCount extends Tokenizer {
-  val log = Logger.getLogger(getClass().getName())
+  val log = Logger.getLogger(getClass.getName)
 
   def main(argv: Array[String]) {
     val args = new Conf(argv)

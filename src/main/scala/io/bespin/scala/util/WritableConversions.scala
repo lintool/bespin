@@ -4,6 +4,7 @@ import org.apache.hadoop.io._
 import tl.lin.data.pair._
 
 import scala.language.implicitConversions
+import scala.reflect.{ClassTag, classTag}
 
 /**
   * Provides a set of implicit conversions between the Hadoop Writable types and base Scala types
@@ -29,6 +30,13 @@ trait WritableConversions {
 
   implicit def TextUnbox(v: Text): String = v.toString
   implicit def TextBox  (v: String): Text = new Text(v)
+
+  /** No implicit unboxing for Objects; have to do it explicitly to prevent confusion over types */
+  def ObjectWritableUnbox[T : ClassTag](v: ObjectWritable): T = {
+    assert(classTag[T].runtimeClass == v.getDeclaredClass)
+    v.get().asInstanceOf[T]
+  }
+  implicit def ObjectWritableBox[T : ClassTag]  (v: T): ObjectWritable = new ObjectWritable(classTag[T].runtimeClass, v)
 }
 
 trait PairWritableConversions {

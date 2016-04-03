@@ -8,7 +8,7 @@ abstract class WordCountLocalIT(override val url: String)
 
   override def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
 
-  "Wordcount" should "produce expected count for 'a'" in programOutput { map =>
+  s"Wordcount:$suiteName" should "produce expected count for 'a'" in programOutput { map =>
     map("a") shouldBe 14593
   }
 

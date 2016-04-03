@@ -284,9 +284,9 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
     lazy val end = opt[Int](descr = "end iteration", required = true)
     lazy val numNodes = opt[Int](descr = "number of nodes", required = true)
 
-    lazy val useCombiner = opt[Boolean](descr = "use combiner", required = false)
-    lazy val useInMapperCombiner = opt[Boolean](descr = "use in-mapper combiner", required = false)
-    lazy val range = opt[Boolean](descr = "use range partitioner", required = false)
+    lazy val useCombiner = opt[Boolean](descr = "use combiner", required = false, default = Some(false))
+    lazy val useInMapperCombiner = opt[Boolean](descr = "use in-mapper combiner", required = false, default = Some(false))
+    lazy val range = opt[Boolean](descr = "use range partitioner", required = false, default = Some(false))
 
     mainOptions = Seq(base, start, end, numNodes, useCombiner, useInMapperCombiner, range)
   }

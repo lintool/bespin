@@ -10,6 +10,7 @@ import scala.collection.mutable
 
 object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
+
   object MyMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text, context: Context) = {
       tokenize(value).foreach(word => context.write(word, 1))
@@ -40,7 +41,7 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
     val input = opt[String](descr = "input path", required = true)
     val output = opt[String](descr = "output path", required = true)
     val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
-    val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
+    val imc = opt[Boolean](descr = "use in-mapper combining", required = false, default = Some(false))
   }
 
   override def run(argv: Array[String]) : Int = {
@@ -50,6 +51,8 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
     log.info("Output: " + args.output())
     log.info("Number of reducers: " + args.reducers())
     log.info("Use in-mapper combining: " + args.imc())
+
+
 
     val thisJob =
       job("WordCount", getConf)

@@ -10,7 +10,7 @@ import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat, MapFileOutputFo
 
 import scala.collection.JavaConverters._
 import scala.language.{higherKinds, implicitConversions}
-import scala.reflect.runtime.universe.{TypeTag => TT, typeOf, typeTag}
+import scala.reflect.runtime.universe.{typeOf, typeTag, TypeTag => TT}
 
 /**
   * TypedMapper provides a scala wrapper to the Mapper class which reduces boilerplate and captures the run-time
@@ -128,6 +128,20 @@ sealed trait HasJob {
 }
 
 /**
+  * A Stage is some hadoop job component which produces a typed output
+  */
+sealed trait Stage[K,V] extends HasJob with WithTypedOutput[K, V]
+
+/**
+  * StageFromtype is a wrapper abstract class which fills in the key and value type information using some other
+  * object which provides key and value information.
+  */
+abstract sealed class StageFromType[K,V](typeSource: WithTypedOutput[K,V]) extends Stage[K,V] {
+  override protected[util] final val kEv: TT[K] = typeSource.kEv
+  override protected[util] final val vEv: TT[V] = typeSource.vEv
+}
+
+/**
   * BaseJob is the root class for creating a MapReduce job using the syntactic sugar provided in this
   * and related classes.
   *
@@ -150,7 +164,7 @@ case class BaseJob(name: String, initialConfig: Option[Configuration] = None, ca
   * @tparam KI Key Input type
   * @tparam VI Value Input type
   */
-sealed trait InputDefinition[KI,VI] extends HasJob
+sealed trait InputDefinition[KI,VI] extends Stage[KI,VI]
 
 /**
   * An OutputDefinition describes the output format of a particular Job.
@@ -160,7 +174,7 @@ sealed trait InputDefinition[KI,VI] extends HasJob
   * @tparam KO Key Output type
   * @tparam VO Value Output type
   */
-sealed trait OutputDefinition[KO,VO] extends HasJob {
+sealed trait OutputDefinition[KO,VO] extends Stage[KO,VO] {
 
   /**
     * Runs the constructed MapReduce Job
@@ -173,146 +187,138 @@ sealed trait OutputDefinition[KO,VO] extends HasJob {
   }
 }
 
-case class FileInputDefinition[KI, VI](baseJob: BaseJob,
-                                       path: Path,
-                                       inputFormat: Class[_<:FileInputFormat[KI,VI]]) extends InputDefinition[KI,VI] {
+case class FileInputDefinition[KI:TT, VI:TT](baseJob: BaseJob,
+                                             path: Path,
+                                             inputFormat: Class[_<:FileInputFormat[KI,VI]]) extends InputDefinition[KI,VI] {
   def job(implicit mirror: reflect.runtime.universe.Mirror) = {
     val jobIn = baseJob.job
     FileInputFormat.addInputPath(jobIn, path)
     jobIn.setInputFormatClass(inputFormat)
     jobIn
   }
+
+  override protected[util] val kEv: TT[KI] = typeTag[KI]
+  override protected[util] val vEv: TT[VI] = typeTag[VI]
 }
 
-case class FileOutputDefinition[KO, VO](stage: HasJob with WithTypedOutput[KO,VO],
+case class FileOutputDefinition[KO, VO](stage: Stage[KO,VO],
                                         path: Path,
                                         outputFormat: Class[_ <: FileOutputFormat[_,_]] = classOf[TextOutputFormat[KO,VO]],
-                                        deleteExisting: Boolean = true) extends OutputDefinition[KO,VO] {
+                                        deleteExisting: Boolean = true) extends StageFromType[KO,VO](stage) with OutputDefinition[KO,VO] {
   def job(implicit mirror: reflect.runtime.universe.Mirror) = {
     val jobIn = stage.job
     FileOutputFormat.setOutputPath(jobIn, path)
     jobIn.setOutputFormatClass(outputFormat)
-    if(deleteExisting)
+    if (deleteExisting)
       FileSystem.get(jobIn.getConfiguration).delete(path, true)
 
     jobIn
   }
 
-  def withFormat[F1<:FileOutputFormat[KO,VO]:TT](implicit mirror: reflect.runtime.universe.Mirror) =
-    this.copy[KO,VO](outputFormat = mirror.runtimeClass(typeOf[F1].typeSymbol.asClass).asInstanceOf[Class[F1]])
-
+  def withFormat[F1 <: FileOutputFormat[KO, VO] : TT](implicit mirror: reflect.runtime.universe.Mirror) =
+    this.copy[KO, VO](outputFormat = mirror.runtimeClass(typeOf[F1].typeSymbol.asClass).asInstanceOf[Class[F1]])
 }
 
 /**
-  * A class representing the "map" stage of a MapReduce job.
-  * Also contains optional Partitioner and Combiner objects.
-  *
-  * @param inputDefinition Reference to the "input" stage of the job, which must be defined before the mapper
-  * @param map Wrapped mapper object
-  * @param combine Optional wrapped combiner(reducer) object
-  * @param partitioner Optional wrapped partitioner object
-  * @tparam KI Key Input type
-  * @tparam VI Value Input type
-  * @tparam KO Key Output type
-  * @tparam VO Value Output type
+  * A MapStage object encapsulates the logic for setting the relevant Hadoop job parameters for the given mapper.
+  * @param input Input stage; must not already have a mapper class set.
+  * @param mapper Mapper object to set the Hadoop job to use
   */
-case class MappedJob[KI, VI, KO, VO](inputDefinition: InputDefinition[KI,VI],
-                                     map: WrappedMapper[KI,VI,KO,VO],
-                                     combine: Option[WrappedReducer[KO,VO,KO,VO]] = None,
-                                     partitioner: Option[WrappedPartitioner[KO,VO]] = None)
-  extends HasJob with WithTypedOutput[KO, VO] {
-
-  /**
-    * Creates a copy of this stage with the combiner set
-    *
-    * @param c Wrapped combiner (reducer) object
-    */
-  def combine(c: WrappedReducer[KO,VO,KO,VO]): MappedJob[KI,VI,KO,VO] =
-    this.copy(combine = Option(c))
-
-  /**
-    * Creates a copy of this stage with the partitioning behaviour set
-    *
-    * @param p Wrapped partitioner object
-    */
-  def partition(p: WrappedPartitioner[KO,VO]): MappedJob[KI,VI,KO,VO] =
-    this.copy(partitioner = Option(p))
-
-  /**
-    * Creates a "reduce" stage with this map stage as the dependency
-    *
-    * @param reducer Wrapped reducer object
-    * @param numReduceTasks Number of reduce tasks (default = 1)
-    * @tparam RKO Reducer Key Output
-    * @tparam RVO Reducer Value Output
-    */
-  def reduce[RKO, RVO](reducer: WrappedReducer[KO,VO,RKO,RVO], numReduceTasks: Int = 1): ReducedJob[KO,VO,RKO,RVO] =
-    ReducedJob[KO,VO,RKO,RVO](this, reduce = reducer, numReduceTasks)
-
-  /**
-    * Creates a "reduce" stage with no reducer class, and the specified number of reducer splits
-    * @param numReduceTasks Number of reduce tasks (default = 1)
-    */
-  def reduce(numReduceTasks: Int = 1)(implicit kt: TT[KO], tt: TT[VO]): ReducedJob[KO,VO,KO,VO] =
-    ReducedJob[KO,VO,KO,VO](this, reduce = WrappedReducer(TypedReducer.nullReducer[KO,VO]), numReduceTasks)
+case class MapStage[KI,VI,KO,VO](input: Stage[KI,VI],
+                                 mapper: WrappedMapper[KI,VI,KO,VO])
+  extends StageFromType[KO,VO](mapper) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
-    val jobIn = inputDefinition.job
-    jobIn.setMapOutputKeyClass(map.outputKeyType)
-    jobIn.setMapOutputValueClass(map.outputValueType)
-    jobIn.setMapperClass(map.clazz)
-    combine.foreach(c => jobIn.setCombinerClass(c.clazz))
-    partitioner.foreach(p => jobIn.setPartitionerClass(p.clazz))
+    val jobIn = input.job
+    jobIn.setMapOutputKeyClass(mapper.outputKeyType)
+    jobIn.setMapOutputValueClass(mapper.outputValueType)
+    val currentMapper = Option(jobIn.getMapperClass)
+    // Throw an exception if a non-default mapper is found to be on the job already
+    if(currentMapper != Some(classOf[Mapper[_,_,_,_]])) {
+      throw new IllegalArgumentException(
+        "Attempted to set a mapper on a Hadoop job, but found one set on the job already. " +
+          "Are you calling map() twice?"
+      )
+    }
+    jobIn.setMapperClass(mapper.clazz)
     jobIn
   }
-
-  override protected[util] val kEv: TT[KO] = map.kEv
-  override protected[util] val vEv: TT[VO] = map.vEv
 }
 
 /**
-  * A class representing the "reduce" stage of a MapReduce job
-  *
-  * @param mapStage Reference to the "map" stage of the job, which must be defined before the reduce
-  * @param reduce Wrapped reducer object
-  * @param numReduceTasks Number of reducers (default 1)
-  * @tparam KI Key Input type
-  * @tparam VI Value Input type
-  * @tparam KO Key Output type
-  * @tparam VO Value Output type
+  * A CombineStage object encapsulates the logic for setting the relevant Hadoop job parameters for the given combiner.
+  * @param input Input stage; must not already have a combiner class set.
+  * @param combiner Combiner object to set the Hadoop job to use.
   */
-case class ReducedJob[KI, VI, KO, VO](mapStage: MappedJob[_,_,KI,VI],
-                                      reduce: WrappedReducer[KI,VI,KO,VO],
-                                      numReduceTasks: Int = 1)
-  extends HasJob with WithTypedOutput[KO, VO] {
-
-  /**
-    * Specify the combiner behaviour (this creates a new copy of the "map" dependency)
-    *
-    * @param c Wrapped reducer object to use as combiner
-    */
-  def combine(c: WrappedReducer[KI,VI,KI,VI]): ReducedJob[KI,VI,KO,VO] =
-    this.copy(mapStage = mapStage.combine(c))
-
-  /**
-    * Specify the partitioning behaviour (this creates a new copy of the "map" dependency)
-    *
-    * @param p Wrapped partitioner object to use as partitioner
-    */
-  def partitionBy(p: WrappedPartitioner[KI,VI]): ReducedJob[KI,VI,KO,VO] =
-    this.copy(mapStage = mapStage.partition(p))
+case class CombineStage[K,V](input: Stage[K,V],
+                             combiner: WrappedReducer[K,V,K,V])
+  extends StageFromType[K,V](combiner) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
-    val jobIn = mapStage.job
-    jobIn.setOutputKeyClass(reduce.outputKeyType)
-    jobIn.setOutputValueClass(reduce.outputValueType)
-    jobIn.setReducerClass(reduce.clazz)
-    jobIn.setNumReduceTasks(numReduceTasks)
+    val jobIn = input.job
+    val currentCombiner = Option(jobIn.getCombinerClass)
+    // Throw an exception if a non-default combiner is found to be on the job already
+    if(currentCombiner.isDefined) {
+      throw new IllegalArgumentException(
+        "Attempted to set a combiner on a Hadoop job, but found one set on the job already. " +
+          "Are you calling combine() twice?"
+      )
+    }
+    jobIn.setCombinerClass(combiner.clazz)
     jobIn
   }
+}
 
-  override protected[util] val kEv: TT[KO] = reduce.kEv
-  override protected[util] val vEv: TT[VO] = reduce.vEv
+/**
+  * A PartitionStage object encapsulates the logic for setting the relevant Hadoop job parameters for the given
+  * partitioner.
+  *
+  * @param input Input stage
+  * @param partitioner Partitioner object to set the Hadoop job to use; will overwrite any existing partitioner already
+  *                    set for the job.
+  */
+case class PartitionStage[K,V](input: Stage[K,V],
+                               partitioner: WrappedPartitioner[K,V])
+  extends StageFromType[K,V](partitioner) {
+
+  override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
+    val jobIn = input.job
+    // Unfortunately cannot reliably check to see if partitioner is set here because the default partitioner
+    // can be a number of different classes.
+    jobIn.setPartitionerClass(partitioner.clazz)
+    jobIn
+  }
+}
+
+/**
+  * A ReduceStage object encapsulates the logic for setting the relevant Hadoop job parameters for the given
+  * reduce stage and number of reducers
+  *
+  * @param input Input stage; must not have already had a reducer set
+  * @param reducer Reducer object to set the Hadoop job to use
+  * @param numReducers Number of reduce tasks to run
+  */
+case class ReduceStage[KI,VI,KO,VO](input: Stage[KI,VI],
+                                    reducer: WrappedReducer[KI,VI,KO,VO],
+                                    numReducers: Int = 1)
+  extends StageFromType[KO,VO](reducer) {
+
+  override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
+    val jobIn = input.job
+    jobIn.setOutputKeyClass(reducer.outputKeyType)
+    jobIn.setOutputValueClass(reducer.outputValueType)
+    val currentReducer = Option(jobIn.getReducerClass)
+    // Throw an exception if a non-default reducer is found to be on the job already
+    if(currentReducer != Some(classOf[Reducer[_,_,_,_]])) {
+      throw new IllegalArgumentException(
+        "Attempted to set a reducer on a Hadoop job, but found one set on the job already. " +
+          "Are you calling reduce() twice?"
+      )
+    }
+    jobIn.setReducerClass(reducer.clazz)
+    jobIn.setNumReduceTasks(numReducers)
+    jobIn
+  }
 }
 
 /**
@@ -338,10 +344,10 @@ trait WrappingSyntax extends BaseSyntax { self: BaseSyntax =>
 }
 
 /**
-  * StageSyntax provides various operations for manipulating various stages of a MapReduce Job in order to
+  * CompositionSyntax provides various operations for manipulating various stages of a MapReduce Job in order to
   * define a job in a type-safe and functional way.
   */
-trait StageSyntax extends WrappingSyntax {
+trait CompositionSyntax extends WrappingSyntax {
 
   /**
     * Creates a BaseJob instance which can be chained with other operations to configure a MapReduce Job.
@@ -373,8 +379,8 @@ trait StageSyntax extends WrappingSyntax {
       * @tparam KI Key Input type of the file - Will determine the input key type of the Mapper stage
       * @tparam VI Value Input type of the file - Will determine the input value type of the Mapper stage
       */
-    def file[KI, VI](path: Path,
-                     inputFormat: Class[_<:FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
+    def file[KI:TT, VI:TT](path: Path,
+                           inputFormat: Class[_<:FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
       FileInputDefinition(job, path, inputFormat)
     }
 
@@ -389,15 +395,15 @@ trait StageSyntax extends WrappingSyntax {
     }
   }
 
-  implicit class InputStageSyntax[KI:TT,VI:TT](inputStage: InputDefinition[KI,VI]) {
-    /**
-      * Create a MapStage from an input stage
-      *
-      * @param map Wrapped Mapper object to set as the Mapper for this job
-      * @tparam KO Key Output type of the mapper
-      * @tparam VO Value Output type of the mapper
-      */
-    def map[KO, VO](map: WrappedMapper[KI,VI,KO,VO]) = MappedJob(inputStage, map)
+  /**
+    * This syntax class provides the main operations for MapReduce jobs: mapping, reducing, partitioning, and combining.
+    */
+  implicit class StageSyntax[K:TT,V:TT](stage: Stage[K,V]) {
+    def map[KO,VO](mapper: WrappedMapper[K,V,KO,VO]): MapStage[K, V, KO, VO] = MapStage(stage, mapper)
+    def combine(combiner: WrappedReducer[K,V,K,V]): CombineStage[K,V] = CombineStage(stage, combiner)
+    def partition(partitioner: WrappedPartitioner[K,V]): PartitionStage[K,V] = PartitionStage(stage, partitioner)
+    def reduce[KO,VO](reducer: WrappedReducer[K,V,KO,VO], numReducers: Int = 1): ReduceStage[K,V,KO,VO] = ReduceStage(stage, reducer, numReducers)
+    def reduce(numReducers: Int = 1): ReduceStage[K,V,K,V] = ReduceStage(stage, TypedReducer.nullReducer[K,V], numReducers)
   }
 
   /**
@@ -408,7 +414,7 @@ trait StageSyntax extends WrappingSyntax {
     * @tparam KO Output key type of the output stage
     * @tparam VO Output value type of the output stage
     */
-  implicit class OutputStageSyntax[KO, VO](outputStage: HasJob with WithTypedOutput[KO,VO]) {
+  implicit class OutputStageSyntax[KO, VO](outputStage: Stage[KO,VO]) {
     /**
       * Bind the output path of the job to a file, and optionally delete the file(s) currently present
       * at that location
@@ -452,14 +458,14 @@ trait StageSyntax extends WrappingSyntax {
   }
 
   /**
-    * Set of syntax operations which are valid only on "reduce" stages which have a key class extending
+    * Set of syntax operations which are valid only on stages which have a key class extending
     * WritableComparable. These operations are mostly concerned with determining the output location and format for the job.
     *
-    * @param reduceStage Input "reduce" stage
-    * @tparam KO Output key type of the reduce stage. Must extend WritableComparable
-    * @tparam VO Output value type of the reduce stage
+    * @param outputStage Output stage
+    * @tparam KO Output key type of the stage. Must extend WritableComparable
+    * @tparam VO Output value type of the stage
     */
-  implicit class WritableComparableReduceStageSyntax[KO<:WritableComparable[_],VO](reduceStage: ReducedJob[_,_,KO,VO]) {
+  implicit class WritableComparableOutputStageSyntax[KO<:WritableComparable[_],VO](outputStage: Stage[KO,VO]) {
 
     /**
       * Sets the output destination, configures output to be MapFileOutputFormat, and runs the MapReduce job immediately.
@@ -472,7 +478,7 @@ trait StageSyntax extends WrappingSyntax {
     def saveAsMapFile(path: Path, deleteExisting: Boolean = true, verbose: Boolean = true)
                      (implicit mirror: reflect.runtime.universe.Mirror): Boolean = {
       val jobWithOutput = FileOutputDefinition(
-        reduceStage, path, outputFormat = classOf[MapFileOutputFormat], deleteExisting)
+        outputStage, path, outputFormat = classOf[MapFileOutputFormat], deleteExisting)
       jobWithOutput.run(verbose)
     }
 
@@ -485,7 +491,7 @@ trait StageSyntax extends WrappingSyntax {
   * in to a class to provide a convenient way to specify MapReduce jobs in Scala.
   */
 trait MapReduceSugar
-  extends StageSyntax
+  extends CompositionSyntax
     with WithCallingClass
     with WithMirror
     with WritableConversions

@@ -8,7 +8,7 @@ abstract class BigramCountLocalIT(override val url: String)
 
   override def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
 
-  "BigramCount" should "produce expected count for 'a baboon'" in programOutput { map =>
+  s"BigramCount:$suiteName" should "produce expected count for 'a baboon'" in programOutput { map =>
     map("a baboon") shouldBe 1
   }
 

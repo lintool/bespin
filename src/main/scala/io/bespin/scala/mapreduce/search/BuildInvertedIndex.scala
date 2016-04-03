@@ -28,9 +28,11 @@ object BuildInvertedIndex extends BaseConfiguredTool with Tokenizer with MapRedu
       counts.clear()
       tokens.foreach( counts.increment )
 
+      val id = docno.get().toInt
+
       // Emit postings
       counts.iterator().asScala.foreach { e =>
-        context.write(e.getLeftElement, (docno.get().toInt, e.getRightElement))
+        context.write(e.getLeftElement, (id, e.getRightElement))
       }
     }
   }
