@@ -26,7 +26,7 @@ object PartitionGraph extends BaseConfiguredTool with MapReduceSugar {
   /**
     * Create an instance of the RangePartitioner class for PageRankNodes
     */
-  private object ThisRangePartitioner extends RangePartitioner[PageRankNode]
+  object ThisRangePartitioner extends RangePartitioner[PageRankNode]
 
   override def run(argv: Array[String]): Int = {
     val args = new Conf(argv)

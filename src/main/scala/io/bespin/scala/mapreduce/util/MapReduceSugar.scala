@@ -35,14 +35,6 @@ abstract class TypedMapper[KI,VI,KO:TT,VO:TT] extends Mapper[KI,VI,KO,VO] with W
   override def cleanup(context: Context): Unit = super.cleanup(context)
 }
 
-object TypedMapper {
-  /**
-    * The null mapper performs no map operations, but maintains the type-safety of the operation
-    * chain.
-    */
-  def nullMapper[KO:TT,VO:TT]: TypedMapper[KO,VO,KO,VO] = new TypedMapper[KO,VO,KO,VO] {}
-}
-
 /**
   * TypedReducer provides a scala wrapper to the Reducer class which reduces boilerplate and captures the run-time
   * output key and value types.
@@ -68,14 +60,6 @@ abstract class TypedReducer[KI,VI,KO:TT,VO:TT] extends Reducer[KI,VI,KO,VO] with
 
   override def cleanup(context: Context): Unit = super.cleanup(context)
 
-}
-
-object TypedReducer {
-  /**
-    * The null reducer performs no reduce operations, but maintains the type-safety of the operation
-    * chain.
-    */
-  def nullReducer[KO:TT,VO:TT]: TypedReducer[KO,VO,KO,VO] = new TypedReducer[KO,VO,KO,VO] {}
 }
 
 /**
@@ -225,13 +209,16 @@ case class FileOutputDefinition[KO, VO](stage: Stage[KO,VO],
   * @param mapper Mapper object to set the Hadoop job to use
   */
 case class MapStage[KI,VI,KO,VO](input: Stage[KI,VI],
-                                 mapper: WrappedMapper[KI,VI,KO,VO])
-  extends StageFromType[KO,VO](mapper) {
+                                 mapper: Option[WrappedMapper[KI,VI,KO,VO]] = None)
+  extends StageFromType[KO,VO](mapper.getOrElse(input).asInstanceOf[WithTypedOutput[KO,VO]]) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = input.job
-    jobIn.setMapOutputKeyClass(mapper.outputKeyType)
-    jobIn.setMapOutputValueClass(mapper.outputValueType)
+
+    val stageType = mapper.getOrElse(input)
+
+    jobIn.setMapOutputKeyClass(stageType.outputKeyType)
+    jobIn.setMapOutputValueClass(stageType.outputValueType)
     val currentMapper = Option(jobIn.getMapperClass)
     // Throw an exception if a non-default mapper is found to be on the job already
     if(currentMapper != Some(classOf[Mapper[_,_,_,_]])) {
@@ -240,7 +227,7 @@ case class MapStage[KI,VI,KO,VO](input: Stage[KI,VI],
           "Are you calling map() twice?"
       )
     }
-    jobIn.setMapperClass(mapper.clazz)
+    mapper.foreach(m => jobIn.setMapperClass(m.clazz))
     jobIn
   }
 }
@@ -251,8 +238,8 @@ case class MapStage[KI,VI,KO,VO](input: Stage[KI,VI],
   * @param combiner Combiner object to set the Hadoop job to use.
   */
 case class CombineStage[K,V](input: Stage[K,V],
-                             combiner: WrappedReducer[K,V,K,V])
-  extends StageFromType[K,V](combiner) {
+                             combiner: Option[WrappedReducer[K,V,K,V]] = None)
+  extends StageFromType[K,V](input) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = input.job
@@ -264,7 +251,7 @@ case class CombineStage[K,V](input: Stage[K,V],
           "Are you calling combine() twice?"
       )
     }
-    jobIn.setCombinerClass(combiner.clazz)
+    combiner.foreach(c => jobIn.setCombinerClass(c.clazz))
     jobIn
   }
 }
@@ -278,14 +265,14 @@ case class CombineStage[K,V](input: Stage[K,V],
   *                    set for the job.
   */
 case class PartitionStage[K,V](input: Stage[K,V],
-                               partitioner: WrappedPartitioner[K,V])
-  extends StageFromType[K,V](partitioner) {
+                               partitioner: Option[WrappedPartitioner[K,V]] = None)
+  extends StageFromType[K,V](input) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = input.job
     // Unfortunately cannot reliably check to see if partitioner is set here because the default partitioner
     // can be a number of different classes.
-    jobIn.setPartitionerClass(partitioner.clazz)
+    partitioner.foreach(p => jobIn.setPartitionerClass(p.clazz))
     jobIn
   }
 }
@@ -299,14 +286,17 @@ case class PartitionStage[K,V](input: Stage[K,V],
   * @param numReducers Number of reduce tasks to run
   */
 case class ReduceStage[KI,VI,KO,VO](input: Stage[KI,VI],
-                                    reducer: WrappedReducer[KI,VI,KO,VO],
+                                    reducer: Option[WrappedReducer[KI,VI,KO,VO]] = None,
                                     numReducers: Int = 1)
-  extends StageFromType[KO,VO](reducer) {
+  extends StageFromType[KO,VO](reducer.getOrElse(input).asInstanceOf[WithTypedOutput[KO,VO]]) {
 
   override def job(implicit mirror: reflect.runtime.universe.Mirror): Job = {
     val jobIn = input.job
-    jobIn.setOutputKeyClass(reducer.outputKeyType)
-    jobIn.setOutputValueClass(reducer.outputValueType)
+
+    val stageType = reducer.getOrElse(input)
+
+    jobIn.setOutputKeyClass(stageType.outputKeyType)
+    jobIn.setOutputValueClass(stageType.outputValueType)
     val currentReducer = Option(jobIn.getReducerClass)
     // Throw an exception if a non-default reducer is found to be on the job already
     if(currentReducer != Some(classOf[Reducer[_,_,_,_]])) {
@@ -315,7 +305,7 @@ case class ReduceStage[KI,VI,KO,VO](input: Stage[KI,VI],
           "Are you calling reduce() twice?"
       )
     }
-    jobIn.setReducerClass(reducer.clazz)
+    reducer.foreach(r => jobIn.setReducerClass(r.clazz))
     jobIn.setNumReduceTasks(numReducers)
     jobIn
   }
@@ -399,11 +389,11 @@ trait CompositionSyntax extends WrappingSyntax {
     * This syntax class provides the main operations for MapReduce jobs: mapping, reducing, partitioning, and combining.
     */
   implicit class StageSyntax[K:TT,V:TT](stage: Stage[K,V]) {
-    def map[KO,VO](mapper: WrappedMapper[K,V,KO,VO]): MapStage[K, V, KO, VO] = MapStage(stage, mapper)
-    def combine(combiner: WrappedReducer[K,V,K,V]): CombineStage[K,V] = CombineStage(stage, combiner)
-    def partition(partitioner: WrappedPartitioner[K,V]): PartitionStage[K,V] = PartitionStage(stage, partitioner)
-    def reduce[KO,VO](reducer: WrappedReducer[K,V,KO,VO], numReducers: Int = 1): ReduceStage[K,V,KO,VO] = ReduceStage(stage, reducer, numReducers)
-    def reduce(numReducers: Int = 1): ReduceStage[K,V,K,V] = ReduceStage(stage, TypedReducer.nullReducer[K,V], numReducers)
+    def map[KO,VO](mapper: WrappedMapper[K,V,KO,VO]): MapStage[K, V, KO, VO] = MapStage(stage, Some(mapper))
+    def combine(combiner: WrappedReducer[K,V,K,V]): CombineStage[K,V] = CombineStage(stage, Some(combiner))
+    def partition(partitioner: WrappedPartitioner[K,V]): PartitionStage[K,V] = PartitionStage(stage, Some(partitioner))
+    def reduce[KO,VO](reducer: WrappedReducer[K,V,KO,VO], numReducers: Int = 1): ReduceStage[K,V,KO,VO] = ReduceStage(stage, Some(reducer), numReducers)
+    def reduce(numReducers: Int = 1): ReduceStage[K,V,K,V] = ReduceStage(stage, None, numReducers)
   }
 
   /**
