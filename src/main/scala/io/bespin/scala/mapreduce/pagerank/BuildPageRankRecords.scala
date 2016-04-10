@@ -79,21 +79,18 @@ object BuildPageRankRecords extends BaseConfiguredTool with MapReduceSugar {
     log.info(s" - outputDir: ${args.output()}")
     log.info(s" - numNodes: ${args.numNodes()}")
 
-    val inputPath = new Path(args.input())
-    val outputPath = new Path(args.output())
-
     val conf = getConf
     conf.setInt(NODE_CNT_FIELD, args.numNodes())
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024)
 
     val thisJob =
       job(this.getClass.getSimpleName, conf)
-        .textFile(inputPath)
+        .textFile(args.input())
         .map(MyMapper)
         .reduce(0)
 
     time {
-      thisJob.saveAsSequenceFile(outputPath, deleteExisting = true)
+      thisJob.saveAsSequenceFile(args.output(), deleteExisting = true)
     }
 
     0

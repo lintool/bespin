@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.wordcount
 
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
 import org.rogach.scallop._
 
@@ -37,11 +36,12 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
   }
 
   private class Conf(args: Seq[String]) extends ScallopConf(args) {
+    lazy val input = opt[String](descr = "input path", required = true)
+    lazy val output = opt[String](descr = "output path", required = true)
+    lazy val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
+    lazy val imc = opt[Boolean](descr = "use in-mapper combining", required = false, default = Some(false))
+
     mainOptions = Seq(input, output, reducers)
-    val input = opt[String](descr = "input path", required = true)
-    val output = opt[String](descr = "output path", required = true)
-    val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
-    val imc = opt[Boolean](descr = "use in-mapper combining", required = false, default = Some(false))
   }
 
   override def run(argv: Array[String]) : Int = {
@@ -57,14 +57,14 @@ object WordCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
     val thisJob =
       job("WordCount", getConf)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(if(args.imc()) MyMapperIMC else MyMapper)
         .combine(MyReducer)
         .reduce(MyReducer, args.reducers())
 
     time {
-        thisJob.saveAsTextFile(new Path(args.output()))
+        thisJob.saveAsTextFile(args.output())
     }
 
     0

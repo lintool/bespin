@@ -35,7 +35,7 @@ public class BfsNode implements Writable {
   private Type type;
   private int nodeid;
   private int distance;
-  private ArrayListOfIntsWritable adjacenyList;
+  private ArrayListOfIntsWritable adjacencyList;
 
   public BfsNode() {}
 
@@ -55,12 +55,12 @@ public class BfsNode implements Writable {
     nodeid = n;
   }
 
-  public ArrayListOfIntsWritable getAdjacenyList() {
-    return adjacenyList;
+  public ArrayListOfIntsWritable getAdjacencyList() {
+    return adjacencyList;
   }
 
   public void setAdjacencyList(ArrayListOfIntsWritable l) {
-    adjacenyList = l;
+    adjacencyList = l;
   }
 
   public Type getType() {
@@ -91,8 +91,8 @@ public class BfsNode implements Writable {
       distance = in.readInt();
     }
 
-    adjacenyList = new ArrayListOfIntsWritable();
-    adjacenyList.readFields(in);
+    adjacencyList = new ArrayListOfIntsWritable();
+    adjacencyList.readFields(in);
   }
 
   /**
@@ -114,13 +114,13 @@ public class BfsNode implements Writable {
       out.writeInt(distance);
     }
 
-    adjacenyList.write(out);
+    adjacencyList.write(out);
   }
 
   @Override
   public String toString() {
-    return String.format("{%d %d %s}", nodeid, distance, (adjacenyList == null ? "[]"
-        : adjacenyList.toString(10)));
+    return String.format("{%d %d %s}", nodeid, distance, (adjacencyList == null ? "[]"
+        : adjacencyList.toString(10)));
   }
 
   /**

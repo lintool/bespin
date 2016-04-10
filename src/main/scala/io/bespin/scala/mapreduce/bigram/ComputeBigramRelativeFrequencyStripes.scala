@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.bigram
 
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 import tl.lin.data.map.HMapStFW
 
@@ -59,7 +58,7 @@ object ComputeBigramRelativeFrequencyStripes extends BaseConfiguredTool with Tok
     val thisJob =
       job("Bigram Relative Frequency - Stripes", getConf)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(StripesMapper)
         .combine(StripesCombiner)
@@ -67,9 +66,9 @@ object ComputeBigramRelativeFrequencyStripes extends BaseConfiguredTool with Tok
 
     time {
       if (args.textOutput())
-        thisJob.saveAsTextFile(new Path(args.output()))
+        thisJob.saveAsTextFile(args.output())
       else
-        thisJob.saveAsSequenceFile(new Path(args.output()))
+        thisJob.saveAsSequenceFile(args.output())
     }
 
     0

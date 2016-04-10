@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.cooccur
 
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 import tl.lin.data.map.HMapStIW
 
@@ -68,14 +67,14 @@ object ComputeCooccurrenceMatrixStripes extends BaseConfiguredTool with Tokenize
     val thisJob =
       job("Cooccurrence Matrix - Stripes", config)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(MyMapper)
         .combine(MyReducer)
         .reduce(MyReducer, args.reducers())
 
     time {
-      thisJob.saveAsTextFile(new Path(args.output()))
+      thisJob.saveAsTextFile(args.output())
     }
 
     0

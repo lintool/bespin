@@ -1,6 +1,6 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestLogging, WithExternalFile}
+import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
 import org.scalatest.{FlatSpec, Matchers}
 
 abstract class WordCountLocalIT(override val url: String)
@@ -18,7 +18,7 @@ abstract class WordCountLocalIT(override val url: String)
 
 }
 
-class WordCountScalaIT extends WordCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class WordCountScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.scala.mapreduce.wordcount.WordCount.main(Array(
       "--input", filePath,
@@ -27,7 +27,7 @@ class WordCountScalaIT extends WordCountLocalIT("http://lintool.github.io/bespin
     ))
 }
 
-class WordCountIMCScalaIT extends WordCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class WordCountIMCScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.scala.mapreduce.wordcount.WordCount.main(Array(
       "--input", filePath,
@@ -37,7 +37,7 @@ class WordCountIMCScalaIT extends WordCountLocalIT("http://lintool.github.io/bes
     ))
 }
 
-class WordCountJavaIT extends WordCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class WordCountJavaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.java.mapreduce.wordcount.WordCount.main(Array(
       "-input", filePath,
@@ -46,7 +46,7 @@ class WordCountJavaIT extends WordCountLocalIT("http://lintool.github.io/bespin-
     ))
 }
 
-class WordCountIMCJavaIT extends WordCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class WordCountIMCJavaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.java.mapreduce.wordcount.WordCount.main(Array(
       "-input", filePath,

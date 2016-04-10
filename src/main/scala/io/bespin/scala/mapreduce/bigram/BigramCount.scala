@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.bigram
 
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
 
 object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
@@ -33,14 +32,14 @@ object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar
     val thisJob =
       job("Word Count", getConf)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(BigramMapper)
         .combine(BigramReducer)
         .reduce(BigramReducer, args.reducers())
 
     time {
-      thisJob.saveAsTextFile(new Path(args.output()))
+      thisJob.saveAsTextFile(args.output())
     }
 
     0

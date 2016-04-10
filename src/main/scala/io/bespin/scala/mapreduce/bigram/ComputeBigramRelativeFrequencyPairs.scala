@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.bigram
 
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{FloatWritable, LongWritable, Text}
 import org.apache.hadoop.mapreduce.Partitioner
 import tl.lin.data.pair.PairOfStrings
@@ -67,7 +66,7 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
     val thisJob =
       job("Bigram Relative Frequency - Pairs", getConf)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(PairsMapper)
         .combine(PairsCombiner)
@@ -76,9 +75,9 @@ object ComputeBigramRelativeFrequencyPairs extends BaseConfiguredTool with Token
 
     time {
       if (args.textOutput())
-        thisJob.saveAsTextFile(new Path(args.output()))
+        thisJob.saveAsTextFile(args.output())
       else
-        thisJob.saveAsSequenceFile(new Path(args.output()))
+        thisJob.saveAsSequenceFile(args.output())
     }
 
     0

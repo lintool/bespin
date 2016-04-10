@@ -1,6 +1,6 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestLogging, WithExternalFile}
+import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
 import org.scalatest.{FlatSpec, Matchers}
 
 abstract class CoocurrencePairsLocalIT(override val url: String)
@@ -33,7 +33,7 @@ abstract class CoocurrencePairsLocalIT(override val url: String)
 
 }
 
-class CoocurrencePairsScalaIT extends CoocurrencePairsLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class CoocurrencePairsScalaIT extends CoocurrencePairsLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.scala.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs.main(Array(
       "--input", filePath,
@@ -43,7 +43,7 @@ class CoocurrencePairsScalaIT extends CoocurrencePairsLocalIT("http://lintool.gi
     ))
 }
 
-class CoocurrencePairsJavaIT extends CoocurrencePairsLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class CoocurrencePairsJavaIT extends CoocurrencePairsLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs.main(Array(
       "-input", filePath,

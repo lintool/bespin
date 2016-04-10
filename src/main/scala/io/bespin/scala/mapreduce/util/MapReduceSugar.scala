@@ -5,7 +5,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.{LongWritable, Text, WritableComparable}
 import org.apache.hadoop.mapreduce._
-import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, TextInputFormat}
+import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, SequenceFileInputFormat, TextInputFormat}
 import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat, MapFileOutputFormat, SequenceFileOutputFormat, TextOutputFormat}
 
 import scala.collection.JavaConverters._
@@ -321,6 +321,15 @@ trait BaseSyntax {
 }
 
 /**
+  * HadoopConversions provides implicit conversions specific to Hadoop classes
+  */
+trait HadoopConversions {
+
+  implicit def stringToPath(p: String): Path = new Path(p)
+
+}
+
+/**
   * WrappingSyntax provides implicit conversions and operations for objects wrapping Hadoop/MapReduce classes
   */
 trait WrappingSyntax extends BaseSyntax { self: BaseSyntax =>
@@ -372,6 +381,18 @@ trait CompositionSyntax extends WrappingSyntax {
     def file[KI:TT, VI:TT](path: Path,
                            inputFormat: Class[_<:FileInputFormat[KI,VI]]): FileInputDefinition[KI,VI] = {
       FileInputDefinition(job, path, inputFormat)
+    }
+
+    /**
+      * sequenceFile creates a FileInputDefinition specifically using the SequenceFileInputFormat for the
+      * specified key and value types.
+      *
+      * @param path Path of the file to read in
+      * @tparam KI Key Input type of the file - Will determine the input key type of the Mapper stage
+      * @tparam VI Value Input type of the file - Will determine the input value type of the Mapper stage
+      */
+    def sequenceFile[KI:TT, VI:TT](path: Path): FileInputDefinition[KI,VI] = {
+      FileInputDefinition(job, path, classOf[SequenceFileInputFormat[KI,VI]])
     }
 
     /**
@@ -485,5 +506,6 @@ trait MapReduceSugar
     with WithCallingClass
     with WithMirror
     with WritableConversions
+    with HadoopConversions
     with PairWritableConversions
 

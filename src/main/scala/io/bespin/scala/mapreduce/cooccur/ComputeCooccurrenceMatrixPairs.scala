@@ -66,7 +66,7 @@ object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer 
     val thisJob =
       job("Cooccurrence Matrix - Pairs", config)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(MyMapper)
         .combine(MyReducer)
@@ -74,7 +74,7 @@ object ComputeCooccurrenceMatrixPairs extends BaseConfiguredTool with Tokenizer 
         .reduce(MyReducer, args.reducers())
 
     time {
-      thisJob.saveAsTextFile(new Path(args.output()))
+      thisJob.saveAsTextFile(args.output())
     }
 
     0

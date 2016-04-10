@@ -20,7 +20,7 @@ object PartitionGraph extends BaseConfiguredTool with MapReduceSugar {
     lazy val numPartitions = opt[Int](descr = "number of partitions", required = true)
     lazy val useRangePartitioner = opt[Boolean](descr = "use range partitioner", required = false, default = Some(false))
 
-    mainOptions = Seq(input, output, numNodes, numPartitions)
+    mainOptions = Seq(input, output, numNodes, numPartitions, useRangePartitioner)
   }
 
   /**

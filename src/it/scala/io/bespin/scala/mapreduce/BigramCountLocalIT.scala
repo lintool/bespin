@@ -1,6 +1,6 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestLogging, WithExternalFile}
+import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
 import org.scalatest.{FlatSpec, Matchers}
 
 abstract class BigramCountLocalIT(override val url: String)
@@ -20,9 +20,17 @@ abstract class BigramCountLocalIT(override val url: String)
     map("dream again") shouldBe 2
   }
 
+  it should "produce expected count for 'dream away'" in programOutput { map =>
+    map("dream away") shouldBe 2
+  }
+
+  it should "produce expected count for 'dream as'" in programOutput { map =>
+    map("dream as") shouldBe 1
+  }
+
 }
 
-class BigramCountScalaIT extends BigramCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class BigramCountScalaIT extends BigramCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.scala.mapreduce.bigram.BigramCount.main(Array(
       "--input", filePath,
@@ -31,7 +39,7 @@ class BigramCountScalaIT extends BigramCountLocalIT("http://lintool.github.io/be
     ))
 }
 
-class BigramCountJavaIT extends BigramCountLocalIT("http://lintool.github.io/bespin-data/Shakespeare.txt") {
+class BigramCountJavaIT extends BigramCountLocalIT(TestConstants.Shakespeare_Url) {
   override def initialJob(outputDir: String): Any =
     io.bespin.java.mapreduce.bigram.BigramCount.main(Array(
       "-input", filePath,

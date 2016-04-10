@@ -8,6 +8,7 @@ import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, Typed
 import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
 import org.apache.hadoop.io.IntWritable
 import org.rogach.scallop.ScallopConf
+import tl.lin.data.array.ArrayListOfIntsWritable
 import tl.lin.data.map.HMapIF
 
 import scala.collection.JavaConverters._
@@ -36,13 +37,13 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
   private object MapClass extends TypedMapper[IntWritable, PageRankNode, IntWritable, PageRankNode] {
 
     // The neighbor to which we're sending messages.
-    private val neighbor = new IntWritable
+    private[this] val neighbor = new IntWritable
 
     // Contents of the messages: partial PageRank mass.
-    private val intermediateMass = new PageRankNode
+    private[this] val intermediateMass = new PageRankNode
 
     // For passing along node structure.
-    private val intermediateStructure = new PageRankNode
+    private[this] val intermediateStructure = new PageRankNode
 
     override def map(nid: IntWritable, node: PageRankNode, context: Context): Unit = {
       // Pass along node structure
@@ -81,7 +82,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
 
   private object MapWithInMapperCombiningClass extends TypedMapper[IntWritable, PageRankNode, IntWritable, PageRankNode] {
     // For buffering PageRank mass contributions keyed by destination node
-    private val map = new HMapIF
+    private[this] val map = new HMapIF
 
     // For passing along node structure.
     private val intermediateStructure = new PageRankNode
@@ -148,7 +149,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
   }
 
   private object CombineClass extends TypedReducer[IntWritable, PageRankNode, IntWritable, PageRankNode] {
-    private val intermediateMass = new PageRankNode
+    private[this] val intermediateMass = new PageRankNode
 
     override def reduce(nid: IntWritable, values: Iterable[PageRankNode], context: Context): Unit = {
 
@@ -179,7 +180,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
     TypedReducer[IntWritable, PageRankNode, IntWritable, PageRankNode] {
     // For keeping track of PageRank mass encountered, so we can compute missing PageRank mass lost
     // through dangling nodes.
-    private var totalMass: Float = Float.NegativeInfinity
+    private[this] var totalMass: Float = Float.NegativeInfinity
 
     override def reduce(nid: IntWritable, iterable: Iterable[PageRankNode], context: Context): Unit = {
       val values = iterable.iterator
@@ -198,7 +199,10 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
         if (n.getType == PageRankNode.Type.Structure) {
           // This is the structure; update accordingly.
           structureReceived += 1
-          node.setAdjacencyList(n.getAdjacencyList)
+          val list = n.getAdjacencyList
+          val arr = Array[Int](list.size)
+          list.getArray.copyToArray(arr)
+          node.setAdjacencyList(new ArrayListOfIntsWritable(arr))
           mass
         } else {
           // This is a message that contains PageRank mass; accumulate.
@@ -252,8 +256,8 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
   // Mapper that distributes the missing PageRank mass (lost at the dangling nodes) and takes care
   // of the random jump factor.
   private object MapPageRankMassDistributionClass extends TypedMapper[IntWritable, PageRankNode, IntWritable, PageRankNode] {
-    private var missingMass = 0.0f
-    private var nodeCnt = 0
+    private[this] var missingMass = 0.0f
+    private[this] var nodeCnt = 0
 
     override def setup(context: Context): Unit = {
       val conf = context.getConfiguration

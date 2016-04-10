@@ -69,13 +69,13 @@ object BuildInvertedIndex extends BaseConfiguredTool with Tokenizer with MapRedu
     val thisJob =
       job("Inverted Index Construction", getConf)
         // Set the input path of the source text file
-        .textFile(new Path(args.input()))
+        .textFile(args.input())
         // Map and reduce over the data of the source file
         .map(MyMapper)
         .reduce(MyReducer)
 
     time {
-      thisJob.saveAsMapFile(new Path(args.output()))
+      thisJob.saveAsMapFile(args.output())
     }
 
     0
