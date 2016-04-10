@@ -1,12 +1,13 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
+import io.bespin.scala.util._
+import org.apache.hadoop.util.ToolRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-abstract class WordCountLocalIT(override val url: String)
-  extends FlatSpec with Matchers with TestLogging with WithExternalFile[String, Long] {
+sealed abstract class WordCountLocalIT(override val url: String)
+  extends FlatSpec with Matchers with TestLogging with SingleKVTest[String, Long] with WithExternalFile {
 
-  override def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
+  override protected def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
 
   s"Wordcount:$suiteName" should "produce expected count for 'a'" in programOutput { map =>
     map("a") shouldBe 14593
@@ -19,8 +20,8 @@ abstract class WordCountLocalIT(override val url: String)
 }
 
 class WordCountScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.scala.mapreduce.wordcount.WordCount.main(Array(
+  override def initialJob: Any =
+    ToolRunner.run(io.bespin.scala.mapreduce.wordcount.WordCount, Array(
       "--input", filePath,
       "--output", outputDir,
       "--reducers", "1"
@@ -28,8 +29,8 @@ class WordCountScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
 }
 
 class WordCountIMCScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.scala.mapreduce.wordcount.WordCount.main(Array(
+  override def initialJob: Any =
+    ToolRunner.run(io.bespin.scala.mapreduce.wordcount.WordCount, Array(
       "--input", filePath,
       "--output", outputDir,
       "--reducers", "1",
@@ -38,8 +39,8 @@ class WordCountIMCScalaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url
 }
 
 class WordCountJavaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.java.mapreduce.wordcount.WordCount.main(Array(
+  override def initialJob: Any =
+    ToolRunner.run(new io.bespin.java.mapreduce.wordcount.WordCount, Array(
       "-input", filePath,
       "-output", outputDir,
       "-reducers", "1"
@@ -47,8 +48,8 @@ class WordCountJavaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
 }
 
 class WordCountIMCJavaIT extends WordCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.java.mapreduce.wordcount.WordCount.main(Array(
+  override def initialJob: Any =
+    ToolRunner.run(new io.bespin.java.mapreduce.wordcount.WordCount, Array(
       "-input", filePath,
       "-output", outputDir,
       "-reducers", "1",

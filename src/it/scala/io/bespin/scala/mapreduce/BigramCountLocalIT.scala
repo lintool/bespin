@@ -1,12 +1,13 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
+import io.bespin.scala.util._
+import org.apache.hadoop.util.ToolRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-abstract class BigramCountLocalIT(override val url: String)
-  extends FlatSpec with Matchers with TestLogging with WithExternalFile[String, Long] {
+sealed abstract class BigramCountLocalIT(override val url: String)
+  extends FlatSpec with Matchers with TestLogging with SingleKVTest[String, Long] with WithExternalFile {
 
-  override def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
+  override protected def tupleConv(key: String, value: String): (String, Long) = (key, value.toLong)
 
   s"BigramCount:$suiteName" should "produce expected count for 'a baboon'" in programOutput { map =>
     map("a baboon") shouldBe 1
@@ -31,8 +32,8 @@ abstract class BigramCountLocalIT(override val url: String)
 }
 
 class BigramCountScalaIT extends BigramCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.scala.mapreduce.bigram.BigramCount.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(io.bespin.scala.mapreduce.bigram.BigramCount, Array(
       "--input", filePath,
       "--output", outputDir,
       "--reducers", "1"
@@ -40,8 +41,8 @@ class BigramCountScalaIT extends BigramCountLocalIT(TestConstants.Shakespeare_Ur
 }
 
 class BigramCountJavaIT extends BigramCountLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.java.mapreduce.bigram.BigramCount.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(new io.bespin.java.mapreduce.bigram.BigramCount, Array(
       "-input", filePath,
       "-output", outputDir,
       "-reducers", "1"

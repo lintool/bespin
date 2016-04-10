@@ -1,13 +1,14 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
+import io.bespin.scala.util._
+import org.apache.hadoop.util.ToolRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-abstract class CoocurrencePairsLocalIT(override val url: String)
-  extends FlatSpec with Matchers with TestLogging with WithExternalFile[(String, String), Long] {
+sealed abstract class CoocurrencePairsLocalIT(override val url: String)
+  extends FlatSpec with Matchers with TestLogging with SingleKVTest[(String, String), Long] with WithExternalFile {
 
   private val tupleRegex = "\\((.*), (.*)\\)".r
-  override def tupleConv(key: String, value: String): ((String, String), Long) = key match {
+  override protected def tupleConv(key: String, value: String): ((String, String), Long) = key match {
     case tupleRegex(l, r) => ((l, r), value.toLong)
   }
 
@@ -34,8 +35,8 @@ abstract class CoocurrencePairsLocalIT(override val url: String)
 }
 
 class CoocurrencePairsScalaIT extends CoocurrencePairsLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.scala.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(io.bespin.scala.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs, Array(
       "--input", filePath,
       "--output", outputDir,
       "--window", "2",
@@ -44,8 +45,8 @@ class CoocurrencePairsScalaIT extends CoocurrencePairsLocalIT(TestConstants.Shak
 }
 
 class CoocurrencePairsJavaIT extends CoocurrencePairsLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(new io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs, Array(
       "-input", filePath,
       "-output", outputDir,
       "-window", "2",

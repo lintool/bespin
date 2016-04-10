@@ -1,13 +1,14 @@
 package io.bespin.scala.mapreduce
 
-import io.bespin.scala.util.{TestConstants, TestLogging, WithExternalFile}
+import io.bespin.scala.util._
+import org.apache.hadoop.util.ToolRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-abstract class CoocurrenceStripesLocalIT(override val url: String)
-  extends FlatSpec with Matchers with TestLogging with WithExternalFile[String, Map[String, Long]] {
+sealed abstract class CoocurrenceStripesLocalIT(override val url: String)
+  extends FlatSpec with Matchers with TestLogging with SingleKVTest[String, Map[String, Long]] with WithExternalFile {
 
   private val tupleRegex = "(.*)=(.*)".r
-  override def tupleConv(key: String, value: String): (String, Map[String, Long]) = {
+  override protected def tupleConv(key: String, value: String): (String, Map[String, Long]) = {
     val map = value.stripPrefix("{").stripSuffix("}").split(", ").map(_.trim).collect {
       case tupleRegex(l, r) => l -> r.toLong
     }.toMap
@@ -34,11 +35,15 @@ abstract class CoocurrenceStripesLocalIT(override val url: String)
     map("slings")("arrows") shouldBe 1
   }
 
+  it should "get correct total count for co-occurrences with (dream *)" in programOutput { map =>
+    map("dream").values.sum shouldBe 374
+  }
+
 }
 
 class CoocurrenceStripesScalaIT extends CoocurrenceStripesLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.scala.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(io.bespin.scala.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes, Array(
       "--input", filePath,
       "--output", outputDir,
       "--window", "2",
@@ -47,8 +52,8 @@ class CoocurrenceStripesScalaIT extends CoocurrenceStripesLocalIT(TestConstants.
 }
 
 class CoocurrenceStripesJavaIT extends CoocurrenceStripesLocalIT(TestConstants.Shakespeare_Url) {
-  override def initialJob(outputDir: String): Any =
-    io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes.main(Array(
+  override protected def initialJob: Any =
+    ToolRunner.run(new io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes, Array(
       "-input", filePath,
       "-output", outputDir,
       "-window", "2",

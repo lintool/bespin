@@ -76,6 +76,16 @@
             </goals>
           </execution>
           <execution>
+            <id>scala-integration-test-add</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <testSourceDir>src/it/scala</testSourceDir>
+            </configuration>
+          </execution>
+          <execution>
             <id>scala-test-compile</id>
             <phase>process-test-resources</phase>
             <goals>
@@ -135,7 +145,6 @@
         <configuration>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
-          <filereports>WDF TestSuite.txt</filereports>
         </configuration>
         <executions>
           <execution>
@@ -143,6 +152,19 @@
             <goals>
               <goal>test</goal>
             </goals>
+            <configuration>
+              <suffixes>(?&lt;!IT)</suffixes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>integration-test</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <suffixes>(?&lt;=IT)</suffixes>
+            </configuration>
           </execution>
         </executions>
       </plugin>
