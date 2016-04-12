@@ -18,9 +18,9 @@ object PartitionGraph extends BaseConfiguredTool with MapReduceSugar {
     lazy val output = opt[String](descr = "output path", required = true)
     lazy val numNodes = opt[Int](descr = "number of nodes", required = true)
     lazy val numPartitions = opt[Int](descr = "number of partitions", required = true)
-    lazy val useRangePartitioner = opt[Boolean](descr = "use range partitioner", required = false, default = Some(false))
+    lazy val range = opt[Boolean](descr = "use range partitioner", required = false, default = Some(false))
 
-    mainOptions = Seq(input, output, numNodes, numPartitions, useRangePartitioner)
+    mainOptions = Seq(input, output, numNodes, numPartitions, range)
   }
 
   /**
@@ -36,7 +36,7 @@ object PartitionGraph extends BaseConfiguredTool with MapReduceSugar {
     log.info(" - output dir: " + args.output())
     log.info(" - num partitions: " + args.numPartitions())
     log.info(" - node cnt: " + args.numNodes())
-    log.info(" - use range partitioner: " + args.useRangePartitioner())
+    log.info(" - use range partitioner: " + args.range())
 
     val conf = getConf
     conf.setInt("NodeCount", args.numNodes())
@@ -46,7 +46,7 @@ object PartitionGraph extends BaseConfiguredTool with MapReduceSugar {
         .file(new Path(args.input()), classOf[NonSplitableSequenceFileInputFormat[IntWritable, PageRankNode]])
 
     val partitionedJob =
-      if(args.useRangePartitioner()) {
+      if(args.range()) {
         input.partition(ThisRangePartitioner)
       } else {
         input

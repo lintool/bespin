@@ -2,7 +2,6 @@ package io.bespin.scala.mapreduce.pagerank
 
 import io.bespin.java.mapreduce.pagerank.PageRankNode
 import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper}
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{IntWritable, LongWritable, Text}
 import org.rogach.scallop.ScallopConf
 import tl.lin.data.array.ArrayListOfIntsWritable
@@ -40,15 +39,16 @@ object BuildPageRankRecords extends BaseConfiguredTool with MapReduceSugar {
 
 
     override def map(key: LongWritable, value: Text, context: Context): Unit = {
-      val arr: Array[String] = value.toString.trim.split("\\s+")
+      val arr: Array[Int] = value.toString.trim.split("\\s+").map(_.toInt)
 
-      val nodeId = arr(0).toInt
+      val nodeId = arr(0)
       nid.set(nodeId)
       node.setNodeId(nodeId)
+
       if(arr.length == 1) {
         node.setAdjacencyList(new ArrayListOfIntsWritable())
       } else {
-        val neighbors: Array[Int] = arr.tail.map(_.toInt)
+        val neighbors: Array[Int] = arr.tail
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors))
       }
 
@@ -84,14 +84,12 @@ object BuildPageRankRecords extends BaseConfiguredTool with MapReduceSugar {
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024)
 
     val thisJob =
-      job(this.getClass.getSimpleName, conf)
+      job(this.getClass.getSimpleName + ":" + args.input(), conf)
         .textFile(args.input())
         .map(MyMapper)
         .reduce(0)
 
-    time {
-      thisJob.saveAsSequenceFile(args.output(), deleteExisting = true)
-    }
+    thisJob.saveAsSequenceFile(args.output(), deleteExisting = true)
 
     0
   }

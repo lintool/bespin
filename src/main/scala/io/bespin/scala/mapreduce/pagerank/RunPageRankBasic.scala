@@ -8,7 +8,6 @@ import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, Typed
 import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
 import org.apache.hadoop.io.IntWritable
 import org.rogach.scallop.ScallopConf
-import tl.lin.data.array.ArrayListOfIntsWritable
 import tl.lin.data.map.HMapIF
 
 import scala.collection.JavaConverters._
@@ -63,7 +62,9 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
 
         context.getCounter(PageRankMessages.edges).increment(list.size)
 
-        list.iterator.asScala.foreach { nextNeighbor =>
+        var i: Int = 0
+        while(i < list.size()) {
+          val nextNeighbor = list.get(i)
           neighbor.set(nextNeighbor)
           intermediateMass.setNodeId(nextNeighbor)
           intermediateMass.setType(PageRankNode.Type.Mass)
@@ -71,6 +72,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
 
           // Emit messages with PageRank mass to neighbors.
           context.write(neighbor, intermediateMass)
+          i += 1
         }
       }
 
@@ -113,7 +115,9 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
 
         context.getCounter(PageRankMessages.edges).increment(list.size())
 
-        list.iterator().asScala.foreach { nextNeighbor =>
+        var i = 0
+        while(i < list.size) {
+          val nextNeighbor = list.get(i)
           if(map.containsKey(nextNeighbor)) {
             // Already message destined for that node; add PageRank mass contribution.
             massMessagesSaved += 1
@@ -123,6 +127,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
             massMessages += 1
             map.put(nextNeighbor, mass)
           }
+          i += 1
         }
       }
       // Bookkeeping.
@@ -194,24 +199,25 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
       // Bookkeeping counters
       var massMessagesReceived = 0
       var structureReceived = 0
+      var mass = Float.NegativeInfinity
 
-      val accumulatedMass = values.foldLeft(Float.NegativeInfinity)((mass, n) =>
-        if (n.getType == PageRankNode.Type.Structure) {
+      while(values.hasNext) {
+        val n = values.next
+
+        if(n.getType == PageRankNode.Type.Structure) {
           // This is the structure; update accordingly.
-          structureReceived += 1
           val list = n.getAdjacencyList
-          val arr = Array[Int](list.size)
-          list.getArray.copyToArray(arr)
-          node.setAdjacencyList(new ArrayListOfIntsWritable(arr))
-          mass
+          structureReceived += 1
+
+          node.setAdjacencyList(list)
         } else {
-          // This is a message that contains PageRank mass; accumulate.
+          mass = sumLogProbs(mass, n.getPageRank)
           massMessagesReceived += 1
-          sumLogProbs(mass, n.getPageRank)
-        })
+        }
+      }
 
       // Update the final accumulated PageRank mass.
-      node.setPageRank(accumulatedMass)
+      node.setPageRank(mass)
       // Bookkeeping
       context.getCounter(PageRankMessages.massMessagesReceived).increment(massMessagesReceived)
 
@@ -221,7 +227,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
         context.write(nid, node)
 
         // Keep track of total PageRank mass
-        totalMass = sumLogProbs(totalMass, accumulatedMass)
+        totalMass = sumLogProbs(totalMass, mass)
       } else if(structureReceived == 0) {
         // We get into this situation if there exists an edge pointing to a node which has no
         // corresponding node structure (i.e., PageRank mass was passed to a non-existent node)...
