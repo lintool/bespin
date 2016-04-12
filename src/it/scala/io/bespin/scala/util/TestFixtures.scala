@@ -9,7 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import scala.collection.mutable
 import scala.io.Source
 
-sealed trait WithTempOutputDir { self: Suite =>
+trait WithTempOutputDir { self: Suite =>
   protected val outputDir = URI.create(System.getProperty("java.io.tmpdir") + "/" + suiteName).toString
   protected def resultDir = outputDir
 }
@@ -78,7 +78,7 @@ trait WithExternalFile extends BeforeAndAfterAll { self: Suite with TestLogging 
 
   lazy val filePath = fileDir.getPath + "/" + urlObj.getFile
 
-  override final def beforeAll = {
+  override def beforeAll = {
     val conf = new Configuration()
     val path = new Path(filePath)
     if(FileSystem.get(conf).exists(path)) {
