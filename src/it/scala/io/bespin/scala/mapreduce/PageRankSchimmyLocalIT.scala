@@ -6,14 +6,14 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ToolRunner
 import org.scalatest.{FlatSpec, Matchers}
 
-sealed abstract class PageRankLocalIT(override val url: String)
+sealed abstract class PageRankSchimmyLocalIT(override val url: String)
   extends FlatSpec with Matchers with TestLogging with SingleKVTest[Int, Float] with WithExternalFile {
 
   override protected def tupleConv(key: String, value: String): (Int, Float) = {
     (key.toInt, value.toFloat)
   }
 
-  protected val Epsilon = 0.0001f
+  protected val Epsilon = 0.01f
   protected val pageRankIterations = 10
   protected val expectedNodes = 6301
   protected val pageRankRecordsDir = outputDir + "/PageRankRecords/"
@@ -26,35 +26,35 @@ sealed abstract class PageRankLocalIT(override val url: String)
   }
 
   it should "return correct PageRank value for node 367" in programOutput { map =>
-    map(367) shouldEqual  -6.037346f +- Epsilon
+    map(367) shouldEqual  -6.0344872f +- Epsilon
   }
 
   it should "return correct PageRank value for node 249" in programOutput { map =>
-    map(249) shouldEqual -6.126378f +- Epsilon
+    map(249) shouldEqual -6.123314f +- Epsilon
   }
 
   it should "return correct PageRank value for node 145" in programOutput { map =>
-    map(145) shouldEqual -6.187434f +- Epsilon
+    map(145) shouldEqual -6.1849885f +- Epsilon
   }
 
   it should "return correct PageRank value for node 264" in programOutput { map =>
-    map(264) shouldEqual -6.2151237f +- Epsilon
+    map(264) shouldEqual -6.212695f +- Epsilon
   }
 
   it should "return correct PageRank value for node 266" in programOutput { map =>
-    map(266) shouldEqual -6.2329774f +- Epsilon
+    map(266) shouldEqual -6.2296443f +- Epsilon
   }
 
   it should "return correct PageRank value for node 4" in programOutput { map =>
-    map(4) shouldEqual -6.4705563f +- Epsilon
+    map(4) shouldEqual -6.4672594f +- Epsilon
   }
 
   it should "return correct PageRank value for node 7" in programOutput { map =>
-    map(7) shouldEqual -6.501463f +- Epsilon
+    map(7) shouldEqual -6.4994793f +- Epsilon
   }
 }
 
-abstract sealed class PageRankScala(url: String) extends PageRankLocalIT(url) {
+abstract sealed class PageRankSchimmyScala(url: String) extends PageRankSchimmyLocalIT(url) {
   def setup(rangePartition: Boolean = false): Unit = {
     ToolRunner.run(io.bespin.scala.mapreduce.pagerank.BuildPageRankRecords, Array(
       "--input", filePath,
@@ -89,7 +89,7 @@ abstract sealed class PageRankScala(url: String) extends PageRankLocalIT(url) {
   }
 }
 
-abstract sealed class PageRankJava(url: String) extends PageRankLocalIT(url) {
+abstract sealed class PageRankSchimmyJava(url: String) extends PageRankSchimmyLocalIT(url) {
   def setup(rangePartition: Boolean = false): Unit = {
     ToolRunner.run(new io.bespin.java.mapreduce.pagerank.BuildPageRankRecords, Array(
       "-input", filePath,
@@ -124,10 +124,10 @@ abstract sealed class PageRankJava(url: String) extends PageRankLocalIT(url) {
   }
 }
 
-class PageRankScalaIT extends PageRankScala(TestConstants.Graph_Url) {
+class PageRankSchimmyScalaIT extends PageRankSchimmyScala(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "--base", pageRankIterDir,
       "--start", "0",
       "--end", pageRankIterations.toString,
@@ -137,10 +137,10 @@ class PageRankScalaIT extends PageRankScala(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankJavaIT extends PageRankJava(TestConstants.Graph_Url) {
+class PageRankSchimmyJavaIT extends PageRankSchimmyJava(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "-base", pageRankIterDir,
       "-start", "0",
       "-end", pageRankIterations.toString,
@@ -150,10 +150,10 @@ class PageRankJavaIT extends PageRankJava(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankRangeScalaIT extends PageRankScala(TestConstants.Graph_Url) {
+class PageRankSchimmyRangeScalaIT extends PageRankSchimmyScala(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup(rangePartition = true)
-    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "--base", pageRankIterDir,
       "--start", "0",
       "--end", pageRankIterations.toString,
@@ -164,10 +164,10 @@ class PageRankRangeScalaIT extends PageRankScala(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankRangeJavaIT extends PageRankJava(TestConstants.Graph_Url) {
+class PageRankSchimmyRangeJavaIT extends PageRankSchimmyJava(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup(rangePartition = true)
-    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "-base", pageRankIterDir,
       "-start", "0",
       "-end", pageRankIterations.toString,
@@ -178,10 +178,10 @@ class PageRankRangeJavaIT extends PageRankJava(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankIMCScalaIT extends PageRankScala(TestConstants.Graph_Url) {
+class PageRankSchimmyIMCScalaIT extends PageRankSchimmyScala(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "--base", pageRankIterDir,
       "--start", "0",
       "--end", pageRankIterations.toString,
@@ -192,10 +192,10 @@ class PageRankIMCScalaIT extends PageRankScala(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankIMCJavaIT extends PageRankJava(TestConstants.Graph_Url) {
+class PageRankSchimmyIMCJavaIT extends PageRankSchimmyJava(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "-base", pageRankIterDir,
       "-start", "0",
       "-end", pageRankIterations.toString,
@@ -206,10 +206,10 @@ class PageRankIMCJavaIT extends PageRankJava(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankCombinerScalaIT extends PageRankScala(TestConstants.Graph_Url) {
+class PageRankSchimmyCombinerScalaIT extends PageRankSchimmyScala(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "--base", pageRankIterDir,
       "--start", "0",
       "--end", pageRankIterations.toString,
@@ -220,10 +220,10 @@ class PageRankCombinerScalaIT extends PageRankScala(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankCombinerJavaIT extends PageRankJava(TestConstants.Graph_Url) {
+class PageRankSchimmyCombinerJavaIT extends PageRankSchimmyJava(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup()
-    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "-base", pageRankIterDir,
       "-start", "0",
       "-end", pageRankIterations.toString,
@@ -234,10 +234,10 @@ class PageRankCombinerJavaIT extends PageRankJava(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankEverythingScalaIT extends PageRankScala(TestConstants.Graph_Url) {
+class PageRankSchimmyEverythingScalaIT extends PageRankSchimmyScala(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup(true)
-    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(io.bespin.scala.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "--base", pageRankIterDir,
       "--start", "0",
       "--end", pageRankIterations.toString,
@@ -250,10 +250,10 @@ class PageRankEverythingScalaIT extends PageRankScala(TestConstants.Graph_Url) {
   }
 }
 
-class PageRankEverythingJavaIT extends PageRankJava(TestConstants.Graph_Url) {
+class PageRankSchimmyEverythingJavaIT extends PageRankSchimmyJava(TestConstants.Graph_Url) {
   override protected def initialJob = {
     setup(true)
-    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankBasic, Array(
+    ToolRunner.run(new io.bespin.java.mapreduce.pagerank.RunPageRankSchimmy, Array(
       "-base", pageRankIterDir,
       "-start", "0",
       "-end", pageRankIterations.toString,

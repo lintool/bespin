@@ -111,6 +111,12 @@ public class RunPageRankSchimmy extends Configured implements Tool {
     // For buffering PageRank mass contributes keyed by destination node.
     private static HMapIF map = new HMapIF();
 
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+      // Clear the buffered values in case this mapper is re-used (as is the case when executing locally).
+      map.clear();
+    }
+
     public void map(IntWritable nid, PageRankNode node, Context context)
         throws IOException, InterruptedException {
       int massMessages = 0;

@@ -141,7 +141,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
       val k = new IntWritable
       val mass = new PageRankNode
 
-      map.entrySet.iterator().asScala.foreach { e =>
+      for(e <- map.entrySet.asScala) {
         k.set(e.getKey)
 
         mass.setNodeId(e.getKey)
@@ -158,17 +158,17 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
 
     override def reduce(nid: IntWritable, values: Iterable[PageRankNode], context: Context): Unit = {
 
-      var massMessages = 0
-      val mass = values.foldLeft(Float.NegativeInfinity)((mass, n) =>
+      val (massMessages, mass) = values.foldLeft((0, Float.NegativeInfinity)) {
+        case ((messages, massSum), n) =>
         if(n.getType == PageRankNode.Type.Structure) {
           // Simply pass along node structure.
           context.write(nid, n)
-          mass
+          (messages, massSum)
         } else {
           // Accumulate PageRank mass contributions
-          massMessages += 1
-          sumLogProbs(mass, n.getPageRank)
-        })
+          (messages + 1, sumLogProbs(massSum, n.getPageRank))
+        }
+      }
 
       // Emit aggregated results
       if(massMessages > 0) {
@@ -314,7 +314,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
     log.info(" - use range partitioner: " + args.range())
 
     // Iterate PageRank.
-    (args.start() until args.end()).foreach { i =>
+    for(i <- args.start() until args.end()) {
       iteratePageRank(i, i + 1, args.base(), args.numNodes(), args.useCombiner(), args.useInMapperCombiner())
     }
 
@@ -329,7 +329,7 @@ object RunPageRankBasic extends BaseConfiguredTool with MapReduceSugar {
     val mass = phase1(i, j, basePath, numNodes, useCombiner, useInMapperCombiner)
 
     // Find out how much PageRank mass got lost at the dangling nodes
-    val missing = 1f - StrictMath.exp(mass).toFloat
+    val missing = Math.max(0.0f, 1f - StrictMath.exp(mass).toFloat)
 
     // Job 2: distribute missing mass, take care of random jump factor
     phase2(i, j, missing, basePath, numNodes)
