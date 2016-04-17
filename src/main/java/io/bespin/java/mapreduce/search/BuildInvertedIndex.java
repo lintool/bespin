@@ -95,7 +95,7 @@ public class BuildInvertedIndex extends Configured implements Tool {
     }
   }
 
-  private BuildInvertedIndex() {}
+  public BuildInvertedIndex() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")

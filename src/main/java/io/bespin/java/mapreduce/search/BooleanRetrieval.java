@@ -31,7 +31,7 @@ public class BooleanRetrieval extends Configured implements Tool {
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
 
-  private BooleanRetrieval() {}
+  public BooleanRetrieval() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());

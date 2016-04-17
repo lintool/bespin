@@ -48,12 +48,19 @@ public class IterateBfs extends Configured implements Tool {
     private static final BfsNode intermediateStructure = new BfsNode();
 
     @Override
+    public void setup(Context context) {
+      // Must clear the map for cases where mapper is
+      // re-used (such as for local execution)
+      map.clear();
+    }
+
+    @Override
     public void map(IntWritable nid, BfsNode node, Context context)
         throws IOException, InterruptedException {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(BfsNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
@@ -65,7 +72,7 @@ public class IterateBfs extends Configured implements Tool {
       // Retain distance to self.
       map.put(nid.get(), node.getDistance());
 
-      ArrayListOfInts adj = node.getAdjacenyList();
+      ArrayListOfInts adj = node.getAdjacencyList();
       int dist = node.getDistance() + 1;
       // Keep track of shortest distance to neighbors.
       for (int i = 0; i < adj.size(); i++) {
@@ -73,7 +80,7 @@ public class IterateBfs extends Configured implements Tool {
 
         // Keep track of distance if it's shorter than previously
         // encountered, or if we haven't encountered this node.
-        if ((map.containsKey(neighbor) && dist < map.get(neighbor)) || !map.containsKey(neighbor)) {
+        if (!map.containsKey(neighbor) || dist < map.get(neighbor)) {
           map.put(neighbor, dist);
         }
       }
@@ -115,7 +122,7 @@ public class IterateBfs extends Configured implements Tool {
 
         if (n.getType() == BfsNode.Type.Structure) {
           // This is the structure; update accordingly.
-          ArrayListOfIntsWritable list = n.getAdjacenyList();
+          ArrayListOfIntsWritable list = n.getAdjacencyList();
           structureReceived++;
 
           int arr[] = new int[list.size()];
@@ -197,7 +204,7 @@ public class IterateBfs extends Configured implements Tool {
     Job job = Job.getInstance(getConf());
     job.setJobName(String.format("IterateBfs[input: %s, output: %s, partitions: %d]",
         args.input, args.output, args.partitions));
-    job.setJarByClass(EncodeBfsGraph.class);
+    job.setJarByClass(IterateBfs.class);
 
     job.setNumReduceTasks(args.partitions);
 

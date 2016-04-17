@@ -1,103 +1,48 @@
 package io.bespin.scala.mapreduce.bigram
 
+import io.bespin.scala.mapreduce.util.{BaseConfiguredTool, MapReduceSugar, TypedMapper, TypedReducer}
 import io.bespin.scala.util.Tokenizer
-import io.bespin.scala.util.WritableConversions
-
-import java.util.StringTokenizer
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable._
-
-import org.apache.hadoop.conf._
-import org.apache.hadoop.fs._
 import org.apache.hadoop.io._
-import org.apache.hadoop.mapreduce._
-import org.apache.hadoop.mapreduce.lib.input._
-import org.apache.hadoop.mapreduce.lib.output._
-import org.apache.hadoop.util.Tool
-import org.apache.hadoop.util.ToolRunner
-import org.apache.log4j._
-import org.rogach.scallop._
 
-class Conf(args: Seq[String]) extends ScallopConf(args) {
-  mainOptions = Seq(input, output, reducers)
-  val input = opt[String](descr = "input path", required = true)
-  val output = opt[String](descr = "output path", required = true)
-  val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
-}
+object BigramCount extends BaseConfiguredTool with Tokenizer with MapReduceSugar {
 
-object BigramCount extends Configured with Tool with WritableConversions with Tokenizer {
-  val log = Logger.getLogger(getClass().getName())
-
-  class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
-    override def map(key: LongWritable, value: Text,
-                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+  private object BigramMapper extends TypedMapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text, context: Context): Unit = {
       val tokens = tokenize(value)
       if (tokens.length > 1)
-        tokens.sliding(2).map(p => p.mkString(" ")).foreach(word => context.write(word, 1))
+        tokens.iterator.zip(tokens.tail.iterator)
+          .map { case (left, right) => s"$left $right" }
+          .foreach(word => context.write(word, 1))
     }
   }
 
-  class MyReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
-    override def reduce(key: Text, values: java.lang.Iterable[IntWritable],
-                        context: Reducer[Text, IntWritable, Text, IntWritable]#Context) = {
-      // Although it is possible to write the reducer in a functional style (e.g., with foldLeft),
-      // an imperative implementation is clearer for two reasons:
-      //
-      //   (1) The MapReduce framework supplies an iterable over writable objects; since writable
-      //       are container objects, it simply returns (a reference to) the same object each time
-      //       but with a different payload inside it.
-      //   (2) Implicit writable conversions in WritableConversions.
-      //
-      // The combination of both means that a functional implementation may have unpredictable
-      // behavior when the two issues interact.
-      var sum = 0
-      for (value <- values.asScala) {
-        sum += value
-      }
-      context.write(key, sum)
+  private object BigramReducer extends TypedReducer[Text, IntWritable, Text, IntWritable] {
+    override def reduce(key: Text, values: Iterable[IntWritable], context: Context): Unit = {
+      context.write(key, values.foldLeft(0)(_ + _))
     }
   }
 
-  override def run(argv: Array[String]) : Int = {
+  override def run(argv: Array[String]): Int = {
     val args = new Conf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
     log.info("Number of reducers: " + args.reducers())
 
-    val conf = getConf()
-    val job = Job.getInstance(conf)
+    val thisJob =
+      job("Word Count", getConf)
+        // Set the input path of the source text file
+        .textFile(args.input())
+        // Map and reduce over the data of the source file
+        .map(BigramMapper)
+        .combine(BigramReducer)
+        .reduce(BigramReducer, args.reducers())
 
-    FileInputFormat.addInputPath(job, new Path(args.input()))
-    FileOutputFormat.setOutputPath(job, new Path(args.output()))
+    time {
+      thisJob.saveAsTextFile(args.output())
+    }
 
-    job.setJobName("Word Count")
-    job.setJarByClass(this.getClass)
-
-    job.setMapOutputKeyClass(classOf[Text])
-    job.setMapOutputValueClass(classOf[IntWritable])
-    job.setOutputKeyClass(classOf[Text])
-    job.setOutputValueClass(classOf[IntWritable])
-    job.setOutputFormatClass(classOf[TextOutputFormat[Text, IntWritable]])
-
-    job.setMapperClass(classOf[MyMapper])
-    job.setCombinerClass(classOf[MyReducer])
-    job.setReducerClass(classOf[MyReducer])
-
-    job.setNumReduceTasks(args.reducers())
-
-    val outputDir = new Path(args.output())
-    FileSystem.get(conf).delete(outputDir, true)
-
-    val startTime = System.currentTimeMillis()
-    job.waitForCompletion(true)
-    log.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds")
-
-    return 0
+    0
   }
 
-  def main(args: Array[String]) {
-    ToolRunner.run(this, args)
-  }
 }
