@@ -44,11 +44,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <scala.version>2.10.4</scala.version>
-    <hbase.version>0.98.16-hadoop2</hbase.version>
-    <!-- find the versions in http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_vd_cdh5_maven_repo.html -->
-    <hadoop.version>2.6.0-cdh5.5.0</hadoop.version>
-    <spark.version>1.5.0-cdh5.5.0</spark.version>
+    <scala.version>2.11.8</scala.version>
+    <hbase.version>1.2.4</hbase.version>
+    <hadoop.version>2.7.2</hadoop.version>
+    <spark.version>2.0.2</spark.version>
   </properties>
 
   <build>
@@ -58,8 +57,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.3</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
 
@@ -140,7 +139,7 @@
     <dependency>
       <groupId>args4j</groupId>
       <artifactId>args4j</artifactId>
-      <version>2.32</version>
+      <version>2.33</version>
     </dependency>
     <dependency>
       <groupId>tl.lin</groupId>
@@ -171,12 +170,12 @@
     </dependency>
     <dependency>
       <groupId>org.rogach</groupId>
-      <artifactId>scallop_2.10</artifactId>
+      <artifactId>scallop_2.11</artifactId>
       <version>0.9.5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.10</artifactId>
+      <artifactId>spark-core_2.11</artifactId>
       <version>${spark.version}</version>
     </dependency>
   </dependencies>
