@@ -4,27 +4,22 @@ import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
 import edu.uci.ics.jung.algorithms.importance.Ranking;
 import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.util.ToolRunner;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
  * <p>
  * Program that computes PageRank for a graph using the <a
- * href="http://jung.sourceforge.net/">JUNG</a> package (2.0 alpha1). Program takes two command-line
+ * href="https://github.com/jrtom/jung">JUNG</a> package. Program takes two command-line
  * arguments: the first is a file containing the graph data, and the second is the random jump
  * factor (a typical setting is 0.15).
  * </p>
@@ -42,80 +37,65 @@ import java.util.Set;
 public class SequentialPageRank {
   private SequentialPageRank() {}
 
-  private static final String INPUT = "input";
-  private static final String JUMP = "jump";
+  public static class Args {
+    @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
+    public String input;
 
-  @SuppressWarnings({ "static-access" })
-  public static void main(String[] args) throws IOException {
-    Options options = new Options();
+    @Option(name = "-jump", metaVar = "[num]", usage = "random jump factor")
+    float alpha = 0.15f;
+  }
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("val").hasArg()
-        .withDescription("random jump factor").create(JUMP));
-
-    CommandLine cmdline = null;
-    CommandLineParser parser = new GnuParser();
+  public static void main(String[] argv) throws IOException {
+    Args args = new Args();
+    CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
+      parser.parseArgument(argv);
+    } catch (CmdLineException e) {
+      System.err.println(e.getMessage());
+      parser.printUsage(System.err);
       System.exit(-1);
     }
-
-    if (!cmdline.hasOption(INPUT)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(SequentialPageRank.class.getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      System.exit(-1);
-    }
-
-    String infile = cmdline.getOptionValue(INPUT);
-    float alpha = cmdline.hasOption(JUMP) ? Float.parseFloat(cmdline.getOptionValue(JUMP)) : 0.15f;
 
     int edgeCnt = 0;
-    DirectedSparseGraph<String, Integer> graph = new DirectedSparseGraph<String, Integer>();
+    DirectedSparseGraph<String, Integer> graph = new DirectedSparseGraph<>();
 
-    BufferedReader data = new BufferedReader(new InputStreamReader(new FileInputStream(infile)));
+    BufferedReader data =
+        new BufferedReader(new InputStreamReader(new FileInputStream(args.input)));
 
     String line;
     while ((line = data.readLine()) != null) {
-      line.trim();
       String[] arr = line.split("\\t");
 
       for (int i = 1; i < arr.length; i++) {
-        graph.addEdge(new Integer(edgeCnt++), arr[0], arr[i]);
+        graph.addEdge(edgeCnt++, arr[0], arr[i]);
       }
     }
 
     data.close();
 
-    WeakComponentClusterer<String, Integer> clusterer = new WeakComponentClusterer<String, Integer>();
+    WeakComponentClusterer<String, Integer> clusterer = new WeakComponentClusterer<>();
+    Set<Set<String>> components = clusterer.apply(graph);
 
-    Set<Set<String>> components = clusterer.transform(graph);
-    int numComponents = components.size();
-    System.out.println("Number of components: " + numComponents);
+    System.out.println("Number of components: " + components.size());
     System.out.println("Number of edges: " + graph.getEdgeCount());
     System.out.println("Number of nodes: " + graph.getVertexCount());
-    System.out.println("Random jump factor: " + alpha);
+    System.out.println("Random jump factor: " + args.alpha);
 
     // Compute PageRank.
-    PageRank<String, Integer> ranker = new PageRank<String, Integer>(graph, alpha);
+    PageRank<String, Integer> ranker = new PageRank<>(graph, args.alpha);
     ranker.evaluate();
 
     // Use priority queue to sort vertices by PageRank values.
-    PriorityQueue<Ranking<String>> q = new PriorityQueue<Ranking<String>>();
+    PriorityQueue<Ranking<String>> q = new PriorityQueue<>();
     int i = 0;
     for (String pmid : graph.getVertices()) {
-      q.add(new Ranking<String>(i++, ranker.getVertexScore(pmid), pmid));
+      q.add(new Ranking<>(i++, ranker.getVertexScore(pmid), pmid));
     }
 
     // Print PageRank values.
     System.out.println("\nPageRank of nodes, in descending order:");
-    Ranking<String> r = null;
+    Ranking<String> r;
     while ((r = q.poll()) != null) {
       System.out.println(String.format("%s\t%.5f ", r.getRanked(), Math.log(r.rankScore)));
     }
