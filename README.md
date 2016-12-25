@@ -195,57 +195,46 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.Encod
    -input data/p2p-Gnutella08-adj.txt -output graph-BFS/iter0000 -src 367
 ```
 
-In the current implementation, you have to run a MapReduce job for every iteration:
+In the current implementation, you have to run a MapReduce job for every iteration, like this:
 
 ```
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0000 -output graph-BFS/iter0001 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0001 -output graph-BFS/iter0002 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0002 -output graph-BFS/iter0003 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0003 -output graph-BFS/iter0004 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0004 -output graph-BFS/iter0005 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0005 -output graph-BFS/iter0006 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0006 -output graph-BFS/iter0007 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0007 -output graph-BFS/iter0008 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0008 -output graph-BFS/iter0009 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0009 -output graph-BFS/iter0010 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0010 -output graph-BFS/iter0011 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0011 -output graph-BFS/iter0012 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0012 -output graph-BFS/iter0013 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0013 -output graph-BFS/iter0014 -partitions 5
-hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input graph-BFS/iter0014 -output graph-BFS/iter0015 -partitions 5
+$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs \
+   -input graph-BFS/iter0000 -output graph-BFS/iter0001 -partitions 5
 ```
 
-Here's a bash script to iterate through the above MapReduce jobs:
+Here's a bash script to run a bunch of iterations:
 
 ```
 #!/bin/bash
-for i in `seq 0 14`;
-do
-    echo "Iteration $i: reading graph-BFS/iter000$i, writing: graph-BFS/iter000$(($i+1))"
-    hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter000$i" -output "graph-BFS/iter000$(($i+1))" -partitions 5
+
+for i in `seq 0 14`; do
+  cur=`echo $i | awk '{printf "%04d\n", $0;}'`
+  next=`echo $(($i+1)) | awk '{printf "%04d\n", $0;}'`
+  echo "Iteration $i: reading graph-BFS/iter$cur, writing: graph-BFS/iter$next"
+  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter$cur" -output "graph-BFS/iter$next" -partitions 5
 done
 ```
 
 The MapReduce job counters tell you how many nodes are reachable at each iteration:
 
-Iteration |  Reachable
----|---:
-0  |    1
-1  |    9
-2  |   65
-3  |  257
-4  |  808
-5  | 1934
-6  | 3479
-7  | 4790
-8  | 5444
-9  | 5797
-10 | 5920
-11 | 5990
-12 | 6018
-13 | 6026
-14 | 6028
-15 | 6028
+Iteration |  Reachable | Distance
+---------:|-----------:|--------:
+        0 |          1 |       1
+        1 |          9 |       8
+        2 |         65 |      56
+        3 |        257 |     192
+        4 |        808 |     551
+        5 |       1934 |    1126
+        6 |       3479 |    1545
+        7 |       4790 |    1311
+        8 |       5444 |     654
+        9 |       5797 |     353
+       10 |       5920 |     123
+       11 |       5990 |      70
+       12 |       6018 |      28
+       13 |       6026 |       8
+       14 |       6028 |       2
+       15 |       6028 |       0
 
 To find all the nodes that are reachable at a particular iteration, run the following job:
 
@@ -256,13 +245,41 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindR
 $ hadoop fs -cat 'graph-BFS/reachable-iter0005/part*' | wc
 ```
 
+These values should be the same as those in the second column of the table above.
+
 To find all the nodes that are at a particular distance (e.g., the search frontier), run the following job:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance \
-   -input graph-BFS/iter0005 -output graph-BFS/d5 -distance 5
+   -input graph-BFS/iter0005 -output graph-BFS/d0005 -distance 5
 
-$ hadoop fs -cat 'graph-BFS/d5/part*' | wc
+$ hadoop fs -cat 'graph-BFS/d0005/part*' | wc
+```
+
+The results are shown in the third column of the table above.
+
+Here's a simple bash script for iterating through the reachability jobs:
+
+```
+#!/bin/bash
+
+for i in `seq 0 15`; do
+  cur=`echo $i | awk '{printf "%04d\n", $0;}'`
+  echo "Iteration $i: reading graph-BFS/iter$cur"
+  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindReachableNodes -input graph-BFS/iter$cur -output graph-BFS/reachable-iter$cur
+done
+```
+
+Here's a simple bash script for extracting nodes at each distance:
+
+```
+#!/bin/bash
+
+for i in `seq 0 15`; do
+  cur=`echo $i | awk '{printf "%04d\n", $0;}'`
+  echo "Iteration $i: reading graph-BFS/iter$cur"
+  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance -input graph-BFS/iter$cur -output graph-BFS/d$cur -distance $i
+done
 ```
 
 ## PageRank in MapReduce
