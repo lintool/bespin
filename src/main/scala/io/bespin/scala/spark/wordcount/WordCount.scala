@@ -16,6 +16,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   val output = opt[String](descr = "output path", required = true)
   val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
   val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
+  verify()
 }
 
 object WordCount extends Tokenizer {

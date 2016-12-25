@@ -24,6 +24,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) {
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
   val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
+  verify()
 }
 
 object BigramCount extends Configured with Tool with WritableConversions with Tokenizer {

@@ -35,10 +35,6 @@
       <id>maven</id>
       <url>http://repo.maven.apache.org/maven2/</url>
     </repository>
-    <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-    </repository>
   </repositories>
 
   <properties>
@@ -55,7 +51,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
+        <version>3.6.0</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -89,7 +85,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.2</version>
+        <version>2.4.3</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -171,7 +167,7 @@
     <dependency>
       <groupId>org.rogach</groupId>
       <artifactId>scallop_2.11</artifactId>
-      <version>0.9.5</version>
+      <version>2.0.5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
