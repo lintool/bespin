@@ -304,40 +304,40 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.
    -input graph-PageRankRecords -output graph-PageRank/iter0000 -numPartitions 5 -numNodes 6301
 ```
 
-Run 10 iterations:
+Run 15 iterations:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.RunPageRankBasic \
-   -base graph-PageRank -numNodes 6301 -start 0 -end 10 -useCombiner
+   -base graph-PageRank -numNodes 6301 -start 0 -end 15 -useCombiner
 ```
 
 Extract the top 20 nodes by PageRank value and examine the results:
 
 ```
 $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.FindMaxPageRankNodes \
-   -input graph-PageRank/iter0010 -output graph-PageRank-top20 -top 20
+   -input graph-PageRank/iter0015 -output graph-PageRank-top20 -top 20
 
 $ hadoop fs -cat graph-PageRank-top20/part-r-00000
-367     -6.03735
-249     -6.12638
-145     -6.18743
-264     -6.21512
-266     -6.23298
-123     -6.28526
+367     -6.03734
+249     -6.12637
+145     -6.18742
+264     -6.21511
+266     -6.23297
+123     -6.28525
 127     -6.28685
-122     -6.29074
-1317    -6.29598
-5       -6.30275
-251     -6.32984
+122     -6.29073
+1317    -6.29597
+5       -6.30274
+251     -6.32983
 427     -6.33821
-149     -6.40217
-176     -6.42351
-353     -6.43989
-390     -6.44405
-559     -6.45492
+149     -6.40216
+176     -6.42350
+353     -6.43988
+390     -6.44404
+559     -6.45491
 124     -6.45705
-4       -6.47056
-7       -6.50146
+4       -6.47055
+7       -6.50145
 ```
 
 Compare the results with a sequential PageRank implementation:
@@ -347,3 +347,4 @@ $ mvn exec:java -Dexec.mainClass=io.bespin.java.mapreduce.pagerank.SequentialPag
    -Dexec.args="-input data/p2p-Gnutella08-adj.txt -jump 0.15"
 ```
 
+The results should be the same.
