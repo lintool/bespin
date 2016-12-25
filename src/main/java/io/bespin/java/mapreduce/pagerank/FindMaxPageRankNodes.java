@@ -1,9 +1,5 @@
 package io.bespin.java.mapreduce.pagerank;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -17,6 +13,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -27,9 +24,12 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
-
 import tl.lin.data.pair.PairOfObjectFloat;
 import tl.lin.data.queue.TopScoredObjects;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 
 public class FindMaxPageRankNodes extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(FindMaxPageRankNodes.class);
@@ -41,7 +41,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      queue = new TopScoredObjects<Integer>(k);
+      queue = new TopScoredObjects<>(k);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
   }
 
   private static class MyReducer extends
-      Reducer<IntWritable, FloatWritable, IntWritable, FloatWritable> {
+      Reducer<IntWritable, FloatWritable, IntWritable, Text> {
     private static TopScoredObjects<Integer> queue;
 
     @Override
@@ -88,11 +88,12 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
     @Override
     public void cleanup(Context context) throws IOException, InterruptedException {
       IntWritable key = new IntWritable();
-      FloatWritable value = new FloatWritable();
+      Text value = new Text();
 
       for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
         key.set(pair.getLeftElement());
-        value.set(pair.getRightElement());
+        // We're outputting a string so we can control the formatting.
+        value.set(String.format("%.5f", pair.getRightElement()));
         context.write(key, value);
       }
     }
@@ -167,7 +168,8 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
     job.setMapOutputValueClass(FloatWritable.class);
 
     job.setOutputKeyClass(IntWritable.class);
-    job.setOutputValueClass(FloatWritable.class);
+    job.setOutputValueClass(Text.class);
+    // Text instead of FloatWritable so we can control formatting
 
     job.setMapperClass(MyMapper.class);
     job.setReducerClass(MyReducer.class);

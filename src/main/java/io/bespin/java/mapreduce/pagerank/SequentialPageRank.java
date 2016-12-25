@@ -1,13 +1,9 @@
 package io.bespin.java.mapreduce.pagerank;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.PriorityQueue;
-import java.util.Set;
-
+import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
+import edu.uci.ics.jung.algorithms.importance.Ranking;
+import edu.uci.ics.jung.algorithms.scoring.PageRank;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -17,10 +13,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.util.ToolRunner;
 
-import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
-import edu.uci.ics.jung.algorithms.importance.Ranking;
-import edu.uci.ics.jung.algorithms.scoring.PageRank;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 /**
  * <p>
@@ -118,7 +117,7 @@ public class SequentialPageRank {
     System.out.println("\nPageRank of nodes, in descending order:");
     Ranking<String> r = null;
     while ((r = q.poll()) != null) {
-      System.out.println(String.format("%.5f %s", Math.log(r.rankScore), r.getRanked()));
+      System.out.println(String.format("%s\t%.5f ", r.getRanked(), Math.log(r.rankScore)));
     }
   }
 }
