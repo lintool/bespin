@@ -126,8 +126,8 @@ $ hadoop fs -cat bigram-freq-mr-stripes/part* | awk '/^dream\t/'
 Here's how you can verify that the pairs and stripes implementation give you the same results:
 
 ```
-$ cat bigram-freq-mr-pairs/part-r-0000* | awk '{print $1$2,$3;}' | grep -v ",\*)" | sort > freq.mr.pairs.txt
-$ cat bigram-freq-mr-stripes/part-r-0000* | perl -ne '%H=();m/([^\t]+)\t\{(.*)\}/; $k=$1; @k=split ", ",$2; foreach(@k){@p=split "=",$_;$H{$p[0]}=$p[1];}; foreach (sort keys %H) {print "($k,$_) $H{$_}\n";}' | sort > freq.mr.stripes.txt
+$ hadoop fs -cat bigram-freq-mr-pairs/part-r-0000* | awk '{print $1$2,$3;}' | grep -v ",\*)" | sort > freq.mr.pairs.txt
+$ hadoop fs -cat bigram-freq-mr-stripes/part-r-0000* | perl -ne '%H=();m/([^\t]+)\t\{(.*)\}/; $k=$1; @k=split ", ",$2; foreach(@k){@p=split "=",$_;$H{$p[0]}=$p[1];}; foreach (sort keys %H) {print "($k,$_) $H{$_}\n";}' | sort > freq.mr.stripes.txt
 $ diff freq.mr.stripes.txt freq.mr.pairs.txt
 ```
 
@@ -318,26 +318,26 @@ $ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.
    -input graph-PageRank/iter0010 -output graph-PageRank-top20 -top 20
 
 $ hadoop fs -cat graph-PageRank-top20/part-r-00000
-367	-6.03735
-249	-6.12638
-145	-6.18743
-264	-6.21512
-266	-6.23298
-123	-6.28526
-127	-6.28685
-122	-6.29074
-1317	-6.29598
-5	-6.30275
-251	-6.32984
-427	-6.33821
+367     -6.03735
+249     -6.12638
+145     -6.18743
+264     -6.21512
+266     -6.23298
+123     -6.28526
+127     -6.28685
+122     -6.29074
+1317    -6.29598
+5       -6.30275
+251     -6.32984
+427     -6.33821
 149	-6.40217
-176	-6.42351
-353	-6.43989
-390	-6.44405
-559	-6.45492
-124	-6.45705
-4	-6.47056
-7	-6.50146
+176     -6.42351
+353     -6.43989
+390     -6.44405
+559     -6.45492
+124     -6.45705
+4       -6.47056
+7       -6.50146
 ```
 
 Compare the results with a sequential PageRank implementation:
