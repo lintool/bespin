@@ -1,11 +1,5 @@
 package io.bespin.java.mapreduce.wordcount;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -27,6 +21,12 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 /**
  * Simple word count demo.
  */
@@ -34,15 +34,15 @@ public class WordCount extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(WordCount.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
-  public static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+  public static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
     // Reuse objects to save overhead of object creation.
-    private final static IntWritable ONE = new IntWritable(1);
-    private final static Text WORD = new Text();
+    private static final IntWritable ONE = new IntWritable(1);
+    private static final Text WORD = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = ((Text) value).toString();
+      String line = value.toString();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -53,13 +53,13 @@ public class WordCount extends Configured implements Tool {
     }
   }
 
-  public static class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
-    private final HashMap<String, Integer> counts = new HashMap<String, Integer>();
+  public static final class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
+    private final HashMap<String, Integer> counts = new HashMap<>();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = ((Text) value).toString();
+      String line = value.toString();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -87,9 +87,9 @@ public class WordCount extends Configured implements Tool {
   }
 
   // Reducer: sums up all the counts.
-  public static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+  public static final class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
     // Reuse objects.
-    private final static IntWritable SUM = new IntWritable();
+    private static final IntWritable SUM = new IntWritable();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
@@ -108,17 +108,17 @@ public class WordCount extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public WordCount() {}
+  private WordCount() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
-    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
-    public int numReducers = 1;
+    @Option(name = "-reducers", metaVar = "[num]", usage = "number of reducers")
+    int numReducers = 1;
 
     @Option(name = "-imc", usage = "use in-mapper combining")
     boolean imc = false;
@@ -128,7 +128,7 @@ public class WordCount extends Configured implements Tool {
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

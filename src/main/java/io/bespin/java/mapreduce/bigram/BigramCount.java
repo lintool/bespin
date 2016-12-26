@@ -1,11 +1,5 @@
 package io.bespin.java.mapreduce.bigram;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,22 +20,28 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+
 /**
  * Counts bigrams.
  */
 public class BigramCount extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BigramCount.class);
 
-  protected static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+  private static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
     private static final IntWritable ONE = new IntWritable(1);
     private static final Text BIGRAM = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = ((Text) value).toString();
+      String line = value.toString();
 
-      List<String> tokens = new ArrayList<String>();
+      List<String> tokens = new ArrayList<>();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -57,8 +57,8 @@ public class BigramCount extends Configured implements Tool {
     }
   }
 
-  protected static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-    private final static IntWritable SUM = new IntWritable();
+  private static final class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    private static final IntWritable SUM = new IntWritable();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException,
@@ -76,24 +76,24 @@ public class BigramCount extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public BigramCount() {}
+  private BigramCount() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
-    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
-    public int numReducers = 1;
+    @Option(name = "-reducers", metaVar = "[num]", usage = "number of reducers")
+    int numReducers = 1;
   }
 
   /**
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
