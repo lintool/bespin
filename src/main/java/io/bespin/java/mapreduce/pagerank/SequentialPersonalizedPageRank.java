@@ -1,5 +1,6 @@
 package io.bespin.java.mapreduce.pagerank;
 
+import com.google.common.base.Function;
 import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
 import edu.uci.ics.jung.algorithms.importance.Ranking;
 import edu.uci.ics.jung.algorithms.scoring.PageRankWithPriors;
@@ -50,7 +51,7 @@ public class SequentialPersonalizedPageRank {
   }
 
   public static void main(String[] argv) throws IOException {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
@@ -93,7 +94,13 @@ public class SequentialPersonalizedPageRank {
 
     // Compute personalized PageRank.
     PageRankWithPriors<String, Integer> ranker = new PageRankWithPriors<>(graph,
-        (String vertex) -> (vertex.equals(args.source) ? 1.0 : 0), args.alpha);
+        new Function<String, Double>() {
+          @Override
+          public Double apply(String vertex) {
+            return vertex.equals(args.source) ? 1.0 : 0;
+          }
+        }, args.alpha);
+    // Note that the Altiscale cluster is still on Java 7, so we don't have lambdas.
     ranker.evaluate();
 
     // Use priority queue to sort vertices by PageRank values.
