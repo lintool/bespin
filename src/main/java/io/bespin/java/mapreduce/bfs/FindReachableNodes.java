@@ -1,7 +1,5 @@
 package io.bespin.java.mapreduce.bfs;
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -20,6 +18,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
+import java.io.IOException;
+
 /**
  * Tool for extracting nodes that are reachable from the source node.
  *
@@ -28,7 +28,7 @@ import org.kohsuke.args4j.ParserProperties;
 public class FindReachableNodes extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(FindReachableNodes.class);
 
-  private static class MyMapper extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
+  private static final class MyMapper extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
     @Override
     public void map(IntWritable nid, BfsNode node, Context context)
         throws IOException, InterruptedException {
@@ -38,21 +38,21 @@ public class FindReachableNodes extends Configured implements Tool {
     }
   }
 
-  public FindReachableNodes() {}
+  private FindReachableNodes() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
   }
 
   /**
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

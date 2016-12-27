@@ -1,8 +1,5 @@
 package io.bespin.java.mapreduce.bfs;
 
-import java.io.IOException;
-import java.util.Iterator;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -21,11 +18,13 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.array.ArrayListOfInts;
 import tl.lin.data.array.ArrayListOfIntsWritable;
 import tl.lin.data.map.HMapII;
 import tl.lin.data.map.MapII;
+
+import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * Tool for running one iteration of parallel breadth-first search.
@@ -35,12 +34,12 @@ import tl.lin.data.map.MapII;
 public class IterateBfs extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(IterateBfs.class);
 
-  private static enum ReachableNodes {
+  private enum ReachableNodes {
     ReachableInMapper, ReachableInReducer
-  };
+  }
 
   // Mapper with in-mapper combiner optimization.
-  private static class MapClass extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
+  private static final class MapClass extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
     // For buffering distances keyed by destination node.
     private static final HMapII map = new HMapII();
 
@@ -98,8 +97,8 @@ public class IterateBfs extends Configured implements Tool {
     }
   }
 
-  // Reduce: sums incoming PageRank contributions, rewrite graph structure.
-  private static class ReduceClass extends Reducer<IntWritable, BfsNode, IntWritable, BfsNode> {
+  // Reduce: select smallest of incoming distances, rewrite graph structure.
+  private static final class ReduceClass extends Reducer<IntWritable, BfsNode, IntWritable, BfsNode> {
     private static final BfsNode node = new BfsNode();
 
     @Override
@@ -159,24 +158,24 @@ public class IterateBfs extends Configured implements Tool {
     }
   }
 
-  public IterateBfs() {}
+  private IterateBfs() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
     @Option(name = "-partitions", metaVar = "[num]", required = true, usage = "number of partitions")
-    public int partitions;
+    int partitions;
   }
 
   /**
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

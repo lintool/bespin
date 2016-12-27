@@ -1,7 +1,5 @@
 package io.bespin.java.mapreduce.bfs;
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -21,8 +19,9 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.array.ArrayListOfIntsWritable;
+
+import java.io.IOException;
 
 /**
  * Tool for taking a plain-text encoding of a directed graph and building corresponding Hadoop
@@ -34,11 +33,11 @@ public class EncodeBfsGraph extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(EncodeBfsGraph.class);
   private static final String SRC_KEY = "src";
 
-  private static enum Graph {
+  private enum Graph {
     Nodes, Edges
-  };
+  }
 
-  private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, BfsNode> {
+  private static final class MyMapper extends Mapper<LongWritable, Text, IntWritable, BfsNode> {
     private static final IntWritable nid = new IntWritable();
     private static final BfsNode node = new BfsNode();
     private static int src;
@@ -76,24 +75,24 @@ public class EncodeBfsGraph extends Configured implements Tool {
     }
   }
 
-  public EncodeBfsGraph() {}
+  private EncodeBfsGraph() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
     @Option(name = "-src", metaVar = "[node]", required = true, usage = "source node")
-    public int src;
+    int src;
   }
 
   /**
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

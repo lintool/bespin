@@ -1,7 +1,5 @@
 package io.bespin.java.mapreduce.bfs;
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -20,6 +18,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
+import java.io.IOException;
+
 /**
  * Tool for extracting nodes that are a particular distance from the source node.
  *
@@ -29,7 +29,7 @@ public class FindNodeAtDistance extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(FindNodeAtDistance.class);
   private static final String DISTANCE_KEY = "distance";
 
-  private static class MyMapper extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
+  private static final class MyMapper extends Mapper<IntWritable, BfsNode, IntWritable, BfsNode> {
     private static int distance;
 
     @Override
@@ -46,24 +46,24 @@ public class FindNodeAtDistance extends Configured implements Tool {
     }
   }
 
-  public FindNodeAtDistance() {}
+  private FindNodeAtDistance() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
     @Option(name = "-distance", metaVar = "[node]", required = true, usage = "distance")
-    public int distance;
+    int distance;
   }
 
   /**
    * Runs this tool.
    */
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
