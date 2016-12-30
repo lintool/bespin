@@ -1,12 +1,5 @@
 package io.bespin.java.mapreduce.search;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeSet;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -21,10 +14,16 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Set;
+import java.util.Stack;
+import java.util.TreeSet;
 
 public class BooleanRetrieval extends Configured implements Tool {
   private MapFile.Reader index;
@@ -36,7 +35,7 @@ public class BooleanRetrieval extends Configured implements Tool {
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
     collection = fs.open(new Path(collectionPath));
-    stack = new Stack<Set<Integer>>();
+    stack = new Stack<>();
   }
 
   private void runQuery(String q) throws IOException {
@@ -68,7 +67,7 @@ public class BooleanRetrieval extends Configured implements Tool {
     Set<Integer> s1 = stack.pop();
     Set<Integer> s2 = stack.pop();
 
-    Set<Integer> sn = new TreeSet<Integer>();
+    Set<Integer> sn = new TreeSet<>();
 
     for (int n : s1) {
       if (s2.contains(n)) {
@@ -83,7 +82,7 @@ public class BooleanRetrieval extends Configured implements Tool {
     Set<Integer> s1 = stack.pop();
     Set<Integer> s2 = stack.pop();
 
-    Set<Integer> sn = new TreeSet<Integer>();
+    Set<Integer> sn = new TreeSet<>();
 
     for (int n : s1) {
       sn.add(n);
@@ -97,7 +96,7 @@ public class BooleanRetrieval extends Configured implements Tool {
   }
 
   private Set<Integer> fetchDocumentSet(String term) throws IOException {
-    Set<Integer> set = new TreeSet<Integer>();
+    Set<Integer> set = new TreeSet<>();
 
     for (PairOfInts pair : fetchPostings(term)) {
       set.add(pair.getLeftElement());
@@ -109,7 +108,7 @@ public class BooleanRetrieval extends Configured implements Tool {
   private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
     PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+        new PairOfWritables<>();
 
     key.set(term);
     index.get(key, value);
@@ -125,22 +124,23 @@ public class BooleanRetrieval extends Configured implements Tool {
     return d.length() > 80 ? d.substring(0, 80) + "..." : d;
   }
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-index", metaVar = "[path]", required = true, usage = "index path")
-    public String index;
+    String index;
 
     @Option(name = "-collection", metaVar = "[path]", required = true, usage = "collection path")
-    public String collection;
+    String collection;
 
     @Option(name = "-query", metaVar = "[term]", required = true, usage = "query")
-    public String query;
+    String query;
   }
 
   /**
    * Runs this tool.
    */
+  @Override
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

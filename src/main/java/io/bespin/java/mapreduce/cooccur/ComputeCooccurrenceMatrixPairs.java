@@ -1,11 +1,5 @@
 package io.bespin.java.mapreduce.cooccur;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -25,8 +19,13 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.pair.PairOfStrings;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * <p>
@@ -44,7 +43,7 @@ import tl.lin.data.pair.PairOfStrings;
 public class ComputeCooccurrenceMatrixPairs extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeCooccurrenceMatrixPairs.class);
 
-  private static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
+  private static final class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
     private static final PairOfStrings PAIR = new PairOfStrings();
     private static final IntWritable ONE = new IntWritable(1);
     private int window = 2;
@@ -57,9 +56,9 @@ public class ComputeCooccurrenceMatrixPairs extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = ((Text) value).toString();
+      String line = value.toString();
 
-      List<String> tokens = new ArrayList<String>();
+      List<String> tokens = new ArrayList<>();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -77,9 +76,9 @@ public class ComputeCooccurrenceMatrixPairs extends Configured implements Tool {
     }
   }
 
-  private static class MyReducer extends
+  private static final class MyReducer extends
       Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-    private final static IntWritable SUM = new IntWritable();
+    private static final IntWritable SUM = new IntWritable();
 
     @Override
     public void reduce(PairOfStrings key, Iterable<IntWritable> values, Context context)
@@ -95,7 +94,7 @@ public class ComputeCooccurrenceMatrixPairs extends Configured implements Tool {
     }
   }
 
-  protected static class MyPartitioner extends Partitioner<PairOfStrings, IntWritable> {
+  private static final class MyPartitioner extends Partitioner<PairOfStrings, IntWritable> {
     @Override
     public int getPartition(PairOfStrings key, IntWritable value, int numReduceTasks) {
       return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
@@ -105,27 +104,28 @@ public class ComputeCooccurrenceMatrixPairs extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public ComputeCooccurrenceMatrixPairs() {}
+  private ComputeCooccurrenceMatrixPairs() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
-    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
-    public int numReducers = 1;
+    @Option(name = "-reducers", metaVar = "[num]", usage = "number of reducers")
+    int numReducers = 1;
 
-    @Option(name = "-window", metaVar = "[num]", required = false, usage = "cooccurrence window")
-    public int window = 2;
+    @Option(name = "-window", metaVar = "[num]", usage = "cooccurrence window")
+    int window = 2;
   }
 
   /**
    * Runs this tool.
    */
+  @Override
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

@@ -1,11 +1,5 @@
 package io.bespin.java.mapreduce.cooccur;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -23,8 +17,13 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.map.HMapStIW;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * <p>
@@ -42,7 +41,7 @@ import tl.lin.data.map.HMapStIW;
 public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeCooccurrenceMatrixStripes.class);
 
-  private static class MyMapper extends Mapper<LongWritable, Text, Text, HMapStIW> {
+  private static final class MyMapper extends Mapper<LongWritable, Text, Text, HMapStIW> {
     private static final HMapStIW MAP = new HMapStIW();
     private static final Text KEY = new Text();
 
@@ -56,9 +55,9 @@ public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = ((Text) value).toString();
+      String line = value.toString();
 
-      List<String> tokens = new ArrayList<String>();
+      List<String> tokens = new ArrayList<>();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -80,7 +79,7 @@ public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool
     }
   }
 
-  private static class MyReducer extends Reducer<Text, HMapStIW, Text, HMapStIW> {
+  private static final class MyReducer extends Reducer<Text, HMapStIW, Text, HMapStIW> {
     @Override
     public void reduce(Text key, Iterable<HMapStIW> values, Context context)
         throws IOException, InterruptedException {
@@ -98,20 +97,20 @@ public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool
   /**
    * Creates an instance of this tool.
    */
-  public ComputeCooccurrenceMatrixStripes() {}
+  private ComputeCooccurrenceMatrixStripes() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
 
-    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
-    public int numReducers = 1;
+    @Option(name = "-reducers", metaVar = "[num]", usage = "number of reducers")
+    int numReducers = 1;
 
-    @Option(name = "-window", metaVar = "[num]", required = false, usage = "cooccurrence window")
-    public int window = 2;
+    @Option(name = "-window", metaVar = "[num]", usage = "cooccurrence window")
+    int window = 2;
   }
 
   /**

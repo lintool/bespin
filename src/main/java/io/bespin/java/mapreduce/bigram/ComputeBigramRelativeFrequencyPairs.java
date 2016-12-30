@@ -131,6 +131,7 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
   /**
    * Runs this tool.
    */
+  @Override
   public int run(String[] argv) throws Exception {
     final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));

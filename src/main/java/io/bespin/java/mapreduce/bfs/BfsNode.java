@@ -1,5 +1,8 @@
 package io.bespin.java.mapreduce.bfs;
 
+import org.apache.hadoop.io.Writable;
+import tl.lin.data.array.ArrayListOfIntsWritable;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -8,27 +11,23 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.hadoop.io.Writable;
-
-import tl.lin.data.array.ArrayListOfIntsWritable;
-
 /**
  * Representation of a graph node for parallel breadth-first search.
  *
  * @author Jimmy Lin
  */
 public class BfsNode implements Writable {
-  public static enum Type {
+  public enum Type {
     Complete((byte) 0),  // Complete structure.
     Distance((byte) 1),  // Distance only.
     Structure((byte) 2); // Adjacency list only.
 
     public byte val;
 
-    private Type(byte v) {
+    Type(byte v) {
       this.val = v;
     }
-  };
+  }
 
   private static final Type[] mapping = new Type[] { Type.Complete, Type.Distance, Type.Structure };
 

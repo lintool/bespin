@@ -37,16 +37,16 @@ import java.util.Set;
 public class SequentialPageRank {
   private SequentialPageRank() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-jump", metaVar = "[num]", usage = "random jump factor")
     float alpha = 0.15f;
   }
 
   public static void main(String[] argv) throws IOException {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {

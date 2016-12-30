@@ -1,9 +1,5 @@
 package io.bespin.java.mapreduce.search;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -16,24 +12,26 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.fd.Int2IntFrequencyDistribution;
 import tl.lin.data.fd.Int2IntFrequencyDistributionEntry;
 import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
-public class LookupPostings {
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
-  public static class Args {
+public class LookupPostings {
+  private static final class Args {
     @Option(name = "-index", metaVar = "[path]", required = true, usage = "index path")
-    public String index;
+    String index;
 
     @Option(name = "-collection", metaVar = "[path]", required = true, usage = "collection path")
-    public String collection;
+    String collection;
 
     @Option(name = "-term", metaVar = "[term]", required = true, usage = "term")
-    public String term;
+    String term;
   }
 
   public static void main(String[] argv) throws IOException {
@@ -68,7 +66,7 @@ public class LookupPostings {
 
     Text key = new Text();
     PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+        new PairOfWritables<>();
 
     key.set(term);
     Writable w = reader.get(key, value);

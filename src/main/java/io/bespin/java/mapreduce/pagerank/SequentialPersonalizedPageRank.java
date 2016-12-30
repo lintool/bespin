@@ -38,13 +38,13 @@ import java.util.Set;
 public class SequentialPersonalizedPageRank {
   private SequentialPersonalizedPageRank() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-source", metaVar = "[node]", required = true,
         usage = "source node (i.e., destination of the random jump)")
-    public String source;
+    String source;
 
     @Option(name = "-jump", metaVar = "[num]", usage = "random jump factor")
     float alpha = 0.15f;

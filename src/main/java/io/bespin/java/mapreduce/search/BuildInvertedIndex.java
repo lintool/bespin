@@ -1,12 +1,5 @@
 package io.bespin.java.mapreduce.search;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,7 +19,6 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-
 import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.fd.Object2IntFrequencyDistribution;
 import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
@@ -34,13 +26,20 @@ import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+
 public class BuildInvertedIndex extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
 
-  private static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
+  private static final class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
     private static final Text WORD = new Text();
     private static final Object2IntFrequencyDistribution<String> COUNTS =
-        new Object2IntFrequencyDistributionEntry<String>();
+        new Object2IntFrequencyDistributionEntry<>();
 
     @Override
     public void map(LongWritable docno, Text doc, Context context)
@@ -48,7 +47,7 @@ public class BuildInvertedIndex extends Configured implements Tool {
       String text = doc.toString();
 
       // Tokenize line.
-      List<String> tokens = new ArrayList<String>();
+      List<String> tokens = new ArrayList<>();
       StringTokenizer itr = new StringTokenizer(text);
       while (itr.hasMoreTokens()) {
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -70,15 +69,15 @@ public class BuildInvertedIndex extends Configured implements Tool {
     }
   }
 
-  private static class MyReducer extends
+  private static final class MyReducer extends
       Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
-    private final static IntWritable DF = new IntWritable();
+    private static final IntWritable DF = new IntWritable();
 
     @Override
     public void reduce(Text key, Iterable<PairOfInts> values, Context context)
         throws IOException, InterruptedException {
       Iterator<PairOfInts> iter = values.iterator();
-      ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
+      ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
 
       int df = 0;
       while (iter.hasNext()) {
@@ -90,26 +89,26 @@ public class BuildInvertedIndex extends Configured implements Tool {
       Collections.sort(postings);
 
       DF.set(df);
-      context.write(key,
-          new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF, postings));
+      context.write(key, new PairOfWritables<>(DF, postings));
     }
   }
 
   private BuildInvertedIndex() {}
 
-  public static class Args {
+  private static final class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
-    public String input;
+    String input;
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-    public String output;
+    String output;
   }
 
   /**
    * Runs this tool.
    */
+  @Override
   public int run(String[] argv) throws Exception {
-    Args args = new Args();
+    final Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
 
     try {
