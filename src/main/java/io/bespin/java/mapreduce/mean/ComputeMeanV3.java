@@ -119,15 +119,15 @@ public class ComputeMeanV3 extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool: " + ComputeMeanV1.class.getSimpleName());
+    LOG.info("Tool: " + ComputeMeanV3.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - number of reducers: " + args.numReducers);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(ComputeMeanV1.class.getSimpleName());
-    job.setJarByClass(ComputeMeanV1.class);
+    job.setJobName(ComputeMeanV3.class.getSimpleName());
+    job.setJarByClass(ComputeMeanV3.class);
 
     job.setNumReduceTasks(args.numReducers);
 
