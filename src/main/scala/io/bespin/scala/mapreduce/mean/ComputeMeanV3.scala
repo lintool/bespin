@@ -90,7 +90,7 @@ object ComputeMeanV3 extends Configured with Tool with WritableConversions with 
     FileInputFormat.addInputPath(job, new Path(args.input()))
     FileOutputFormat.setOutputPath(job, new Path(args.output()))
 
-    job.setJobName("Word Count")
+    job.setJobName(this.getClass.getSimpleName)
     job.setJarByClass(this.getClass)
 
     job.setInputFormatClass(classOf[KeyValueTextInputFormat])
