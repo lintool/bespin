@@ -31,9 +31,10 @@ import org.apache.hadoop.util.Tool
 import org.apache.hadoop.util.ToolRunner
 import org.apache.log4j._
 import org.rogach.scallop._
+import tl.lin.data.map.HMapKL
 import tl.lin.data.pair.PairOfLongs
 
-class ComputeMeanV4Conf(args: Seq[String]) extends ScallopConf(args) {
+class ComputeMeanV4aConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, reducers)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
@@ -41,12 +42,12 @@ class ComputeMeanV4Conf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
-object ComputeMeanV4 extends Configured with Tool with WritableConversions with Tokenizer {
+object ComputeMeanV4a extends Configured with Tool with WritableConversions with Tokenizer {
   val log = Logger.getLogger(getClass.getName)
 
   class MyMapper extends Mapper[Text, Text, Text, PairOfLongs] {
-    val sums = new HashMap[String, Long]() { override def default(key: String) = 0 }
-    val counts = new HashMap[String, Long]() { override def default(key: String) = 0 }
+    val sums: HMapKL[String] = new HMapKL[String]()
+    val counts: HMapKL[String] = new HMapKL[String]()
 
     override def setup(context: Mapper[Text, Text, Text, PairOfLongs]#Context) = {
       sums.clear()
@@ -55,13 +56,19 @@ object ComputeMeanV4 extends Configured with Tool with WritableConversions with 
 
     override def map(key: Text, value: Text,
                      context: Mapper[Text, Text, Text, PairOfLongs]#Context) = {
-      sums.put(key, sums(key) + value.toString.toLong)
-      counts.put(key, counts(key) + 1L)
+      val k: String = key.toString
+      if (sums.containsKey(k)) {
+        sums.put(k, sums.get(k) + value.toString.toLong)
+        counts.put(k, counts.get(k) + 1L)
+      } else {
+        sums.put(k, value.toString.toInt.toLong)
+        counts.put(k, 1L)
+      }
     }
 
     override def cleanup(context: Mapper[Text, Text, Text, PairOfLongs]#Context) = {
-      for (key <- counts.keySet) {
-        context.write(key, new PairOfLongs(sums(key), counts(key)))
+      for (key <- counts.keySet.asScala) {
+        context.write(key, new PairOfLongs(sums.get(key), counts.get(key)))
       }
     }
   }
@@ -93,7 +100,7 @@ object ComputeMeanV4 extends Configured with Tool with WritableConversions with 
   }
 
   override def run(argv: Array[String]) : Int = {
-    val args = new ComputeMeanV4Conf(argv)
+    val args = new ComputeMeanV4aConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
