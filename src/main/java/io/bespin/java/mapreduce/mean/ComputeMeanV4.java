@@ -36,8 +36,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-import tl.lin.data.map.HMapStIW;
-import tl.lin.data.pair.PairOfInts;
+import tl.lin.data.map.HMapKL;
+import tl.lin.data.pair.PairOfLongs;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -48,56 +48,67 @@ import java.util.Iterator;
 public class ComputeMeanV4 extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeMeanV4.class);
 
-  private static final class MyMapper extends Mapper<Text, Text, Text, PairOfInts> {
-    private static final HMapStIW SUMS = new HMapStIW();
-    private static final HMapStIW COUNTS = new HMapStIW();
+  private static final class MyMapper extends Mapper<Text, Text, Text, PairOfLongs> {
+    private HMapKL<String> sums;
+    private HMapKL<String> counts;
+
+    @Override
+    public void setup(Context context) {
+      sums = new HMapKL<>();
+      counts = new HMapKL<>();
+    }
 
     @Override
     public void map(Text key, Text value, Context context)
         throws IOException, InterruptedException {
       String k = key.toString();
-      SUMS.put(k, SUMS.get(k) + Integer.parseInt(value.toString()));
-      COUNTS.put(k, COUNTS.get(k) + 1);
+      if (sums.containsKey(k)) {
+        sums.put(k, sums.get(k) + Long.parseLong(value.toString()));
+        counts.put(k, counts.get(k) + 1L);
+      } else {
+        sums.put(k, (long) Integer.parseInt(value.toString()));
+        counts.put(k, 1L);
+      }
     }
 
     @Override
     public void cleanup(Context context)
         throws IOException, InterruptedException {
-      for (String key : SUMS.keySet()) {
-        context.write(new Text(key), new PairOfInts(SUMS.get(key), COUNTS.get(key)));
+      for (String key : sums.keySet()) {
+        context.write(new Text(key), new PairOfLongs(sums.get(key), counts.get(key)));
       }
     }
   }
 
-  private static final class MyCombiner extends Reducer<Text, PairOfInts, Text, PairOfInts> {
+  private static final class MyCombiner extends Reducer<Text, PairOfLongs, Text, PairOfLongs> {
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfLongs> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      Iterator<PairOfLongs> iter = values.iterator();
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
-        PairOfInts pair = iter.next();
+        PairOfLongs pair = iter.next();
         sum += pair.getLeftElement();
         cnt += pair.getRightElement();
       }
-      context.write(key, new PairOfInts(sum, cnt));
+      context.write(key, new PairOfLongs(sum, cnt));
     }
   }
 
-  private static final class MyReducer extends Reducer<Text, PairOfInts, Text, IntWritable> {
+  private static final class MyReducer extends Reducer<Text, PairOfLongs, Text, IntWritable> {
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfLongs> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      Iterator<PairOfLongs> iter = values.iterator();
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
-        PairOfInts pair = iter.next();
+        PairOfLongs pair = iter.next();
         sum += pair.getLeftElement();
         cnt += pair.getRightElement();
       }
-      context.write(key, new IntWritable(sum/cnt));
+      context.write(key, new IntWritable((int) (sum/cnt)));
     }
   }
 
@@ -151,7 +162,7 @@ public class ComputeMeanV4 extends Configured implements Tool {
     job.setInputFormatClass(KeyValueTextInputFormat.class);
     job.getConfiguration().set("mapreduce.input.keyvaluelinerecordreader.key.value.separator", "\t");
     job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfInts.class);
+    job.setMapOutputValueClass(PairOfLongs.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
     job.setOutputFormatClass(TextOutputFormat.class);

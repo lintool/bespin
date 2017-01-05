@@ -36,7 +36,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-import tl.lin.data.pair.PairOfInts;
+import tl.lin.data.pair.PairOfLongs;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -47,43 +47,43 @@ import java.util.Iterator;
 public class ComputeMeanV3 extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeMeanV3.class);
 
-  private static final class MyMapper extends Mapper<Text, Text, Text, PairOfInts> {
+  private static final class MyMapper extends Mapper<Text, Text, Text, PairOfLongs> {
     @Override
     public void map(Text key, Text value, Context context)
         throws IOException, InterruptedException {
-      context.write(key, new PairOfInts(Integer.parseInt(value.toString()), 1));
+      context.write(key, new PairOfLongs(Long.parseLong(value.toString()), 1L));
     }
   }
 
-  private static final class MyCombiner extends Reducer<Text, PairOfInts, Text, PairOfInts> {
+  private static final class MyCombiner extends Reducer<Text, PairOfLongs, Text, PairOfLongs> {
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfLongs> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      Iterator<PairOfLongs> iter = values.iterator();
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
-        PairOfInts pair = iter.next();
+        PairOfLongs pair = iter.next();
         sum += pair.getLeftElement();
         cnt += pair.getRightElement();
       }
-      context.write(key, new PairOfInts(sum, cnt));
+      context.write(key, new PairOfLongs(sum, cnt));
     }
   }
 
-  private static final class MyReducer extends Reducer<Text, PairOfInts, Text, IntWritable> {
+  private static final class MyReducer extends Reducer<Text, PairOfLongs, Text, IntWritable> {
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfLongs> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      Iterator<PairOfLongs> iter = values.iterator();
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
-        PairOfInts pair = iter.next();
+        PairOfLongs pair = iter.next();
         sum += pair.getLeftElement();
         cnt += pair.getRightElement();
       }
-      context.write(key, new IntWritable(sum/cnt));
+      context.write(key, new IntWritable((int) (sum/cnt)));
     }
   }
 
@@ -137,7 +137,7 @@ public class ComputeMeanV3 extends Configured implements Tool {
     job.setInputFormatClass(KeyValueTextInputFormat.class);
     job.getConfiguration().set("mapreduce.input.keyvaluelinerecordreader.key.value.separator", "\t");
     job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfInts.class);
+    job.setMapOutputValueClass(PairOfLongs.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
     job.setOutputFormatClass(TextOutputFormat.class);

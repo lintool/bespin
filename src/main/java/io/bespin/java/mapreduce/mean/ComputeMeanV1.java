@@ -59,13 +59,13 @@ public class ComputeMeanV1 extends Configured implements Tool {
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
       Iterator<IntWritable> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
         sum += iter.next().get();
         cnt++;
       }
-      context.write(key, new IntWritable(sum/cnt));
+      context.write(key, new IntWritable((int) (sum/cnt)));
     }
   }
 

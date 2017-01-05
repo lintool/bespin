@@ -36,7 +36,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-import tl.lin.data.pair.PairOfInts;
+import tl.lin.data.pair.PairOfLongs;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -55,34 +55,34 @@ public class ComputeMeanV2 extends Configured implements Tool {
     }
   }
 
-  private static final class MyCombiner extends Reducer<Text, IntWritable, Text, PairOfInts> {
+  private static final class MyCombiner extends Reducer<Text, IntWritable, Text, PairOfLongs> {
     @Override
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
       Iterator<IntWritable> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
         sum += iter.next().get();
         cnt++;
       }
-      context.write(key, new PairOfInts(sum, cnt));
+      context.write(key, new PairOfLongs(sum, cnt));
     }
   }
 
-  private static final class MyReducer extends Reducer<Text, PairOfInts, Text, IntWritable> {
+  private static final class MyReducer extends Reducer<Text, PairOfLongs, Text, IntWritable> {
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfLongs> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      int sum = 0;
-      int cnt = 0;
+      Iterator<PairOfLongs> iter = values.iterator();
+      long sum = 0L;
+      long cnt = 0L;
       while (iter.hasNext()) {
-        PairOfInts pair = iter.next();
+        PairOfLongs pair = iter.next();
         sum += pair.getLeftElement();
         cnt += pair.getRightElement();
       }
-      context.write(key, new IntWritable(sum/cnt));
+      context.write(key, new IntWritable((int) (sum/cnt)));
     }
   }
 
