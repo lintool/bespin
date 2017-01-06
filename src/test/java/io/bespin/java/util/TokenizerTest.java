@@ -24,16 +24,18 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class TokenizerTest {
-  private static final String[] EXAMPLES = {
+  // Public so we can share test cases across Java and Scala.
+  public static final String[] EXAMPLES = {
       "It is Perfect! But there's something missing.",
       "There are perfect 2 pigs here, before the big bad wolf came."
   };
 
-  // There has got to be a more concise way to do this...
-  private static final List<List<String>> EXPECTED = Lists.newArrayList(
+  // Public so we can share test cases across Java and Scala.
+  public static final List<List<String>> EXPECTED = Lists.newArrayList(
       (List<String>) Lists.newArrayList("it", "is", "perfect", "but", "there's", "something", "missing"),
       (List<String>) Lists.newArrayList("there", "are", "perfect", "pigs", "here", "before", "the", "big", "bad",
           "wolf", "came"));
+  // There has got to be a more concise way to do this...
 
   @Test
   public void testJavaTokenization() throws Exception {
@@ -41,6 +43,4 @@ public class TokenizerTest {
       assertEquals(EXPECTED.get(i), Tokenizer.tokenize(EXAMPLES[i]));
     }
   }
-
-  // TODO: We should add a test case to make sure the Scala tokenizer behaves the same way.
 }
