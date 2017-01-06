@@ -41,6 +41,11 @@ class ComputeMeanV2Conf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
+/**
+  * Program that computes the mean of values associated with each key (version 2),
+  * implemented in Scala.
+  * Note that this implementation is broken by design to show improper use of combiners.
+  */
 object ComputeMeanV2 extends Configured with Tool with WritableConversions with Tokenizer {
   val log = Logger.getLogger(getClass.getName)
 

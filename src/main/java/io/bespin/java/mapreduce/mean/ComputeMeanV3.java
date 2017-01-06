@@ -42,7 +42,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Compute the mean of values of a key (version 3).
+ * Program that computes the mean of values associated with each key (version 3).
+ * This implementation illustrates proper use of combiners and is faster than version 1.
  */
 public class ComputeMeanV3 extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeMeanV3.class);

@@ -41,6 +41,12 @@ class ComputeMeanV1Conf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
+/**
+  * Program that computes the mean of values associated with each key (version 1),
+  * implemented in Scala.
+  * This is the most naive implementation that simply emits the input key-value pair, lets the
+  * framework handle the group-by, and computes the mean in the reducer.
+  */
 object ComputeMeanV1 extends Configured with Tool with WritableConversions with Tokenizer {
   val log = Logger.getLogger(getClass.getName)
 

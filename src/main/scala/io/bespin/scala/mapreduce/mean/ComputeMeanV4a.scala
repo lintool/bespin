@@ -42,6 +42,12 @@ class ComputeMeanV4aConf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
+/**
+  * Program that computes the mean of values associated with each key (version 4a),
+  * implemented in Scala.
+  * This implementation illustrates the "in-mapper combining" concept with optimized HashMaps
+  * and is faster than version 4.
+  */
 object ComputeMeanV4a extends Configured with Tool with WritableConversions with Tokenizer {
   val log = Logger.getLogger(getClass.getName)
 

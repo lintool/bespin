@@ -41,7 +41,9 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Compute the mean of values of a key (version 1).
+ * Program that computes the mean of values associated with each key (version 1).
+ * This is the most naive implementation that simply emits the input key-value pair, lets the
+ * framework handle the group-by, and computes the mean in the reducer.
  */
 public class ComputeMeanV1 extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeMeanV1.class);

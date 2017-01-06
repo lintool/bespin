@@ -42,7 +42,7 @@ import java.io.IOException;
 import java.util.Random;
 
 /**
- * Simple word count demo.
+ * Program that generates random data.
  */
 public class GenerateRandomData extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(GenerateRandomData.class);

@@ -43,7 +43,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Compute the mean of values of a key (version 4).
+ * Program that computes the mean of values associated with each key (version 4).
+ * This implementation illustrates the "in-mapper combining" concept is faster than version 3.
  */
 public class ComputeMeanV4 extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeMeanV4.class);

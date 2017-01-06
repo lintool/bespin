@@ -41,6 +41,15 @@ class ComputeMeanV3Conf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
+/**
+  * Program that computes the mean of values associated with each key (version 3),
+  * implemented in Scala.
+  * This implementation illustrates proper use of combiners. Note that although the Java
+  * implementation of version 3 is faster than the Java implementation of version 1,
+  * Scala version 3 isn't actually faster than Scala version 1. This shows that the Scala
+  * overhead associated with manipulating lots of complex datatypes is not sufficient to
+  * compensate for avoiding a brute-force shuffling of the data (as in version 1).
+  */
 object ComputeMeanV3 extends Configured with Tool with WritableConversions with Tokenizer {
   val log = Logger.getLogger(getClass.getName)
 
