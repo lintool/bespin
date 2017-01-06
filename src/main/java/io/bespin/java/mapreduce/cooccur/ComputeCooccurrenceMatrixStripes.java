@@ -16,6 +16,7 @@
 
 package io.bespin.java.mapreduce.cooccur;
 
+import io.bespin.java.util.Tokenizer;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -36,10 +37,8 @@ import org.kohsuke.args4j.ParserProperties;
 import tl.lin.data.map.HMapStIW;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
 
 /**
  * <p>
@@ -71,16 +70,7 @@ public class ComputeCooccurrenceMatrixStripes extends Configured implements Tool
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = value.toString();
-
-      List<String> tokens = new ArrayList<>();
-      StringTokenizer itr = new StringTokenizer(line);
-      while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
-        if (w.length() == 0) continue;
-        tokens.add(w);
-      }
-
+      List<String> tokens = Tokenizer.tokenize(value.toString());
 
       for (int i = 0; i < tokens.size(); i++) {
         MAP.clear();
