@@ -16,6 +16,7 @@
 
 package io.bespin.java.mapreduce.bigram;
 
+import io.bespin.java.util.Tokenizer;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,12 +40,10 @@ import tl.lin.data.map.HMapStFW;
 import tl.lin.data.map.MapKF;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 public class ComputeBigramRelativeFrequencyStripes  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ComputeBigramRelativeFrequencyStripes.class);
@@ -55,17 +54,9 @@ public class ComputeBigramRelativeFrequencyStripes  extends Configured implement
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = value.toString();
-
       Map<String, HMapStFW> stripes = new HashMap<>();
 
-      List<String> tokens = new ArrayList<>();
-      StringTokenizer itr = new StringTokenizer(line);
-      while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
-        if (w.length() == 0) continue;
-        tokens.add(w);
-      }
+      List<String> tokens = Tokenizer.tokenize(value.toString());
 
       if (tokens.size() < 2) return;
       for (int i = 1; i < tokens.size(); i++) {

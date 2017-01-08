@@ -16,6 +16,7 @@
 
 package io.bespin.java.mapreduce.search;
 
+import io.bespin.java.util.Tokenizer;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,11 +44,9 @@ import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
 
 public class BuildInvertedIndex extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
@@ -60,16 +59,7 @@ public class BuildInvertedIndex extends Configured implements Tool {
     @Override
     public void map(LongWritable docno, Text doc, Context context)
         throws IOException, InterruptedException {
-      String text = doc.toString();
-
-      // Tokenize line.
-      List<String> tokens = new ArrayList<>();
-      StringTokenizer itr = new StringTokenizer(text);
-      while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
-        if (w.length() == 0) continue;
-        tokens.add(w);
-      }
+      List<String> tokens = Tokenizer.tokenize(doc.toString());
 
       // Build a histogram of the terms.
       COUNTS.clear();

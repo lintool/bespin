@@ -16,16 +16,22 @@
 
 package io.bespin.scala.util
 
-import java.util.StringTokenizer
+import org.scalatest.junit.AssertionsForJUnit
+import scala.collection.JavaConversions._
 
-import scala.collection.JavaConverters._
+import org.junit.Assert._
+import org.junit.Test
 
-trait Tokenizer {
-  def tokenize(s: String): List[String] = {
-    val pattern = """(^[^a-z]+|[^a-z]+$)""".r
+class TokenizerTest extends AssertionsForJUnit {
+  class MockTokenizer extends Tokenizer {}
 
-    new StringTokenizer(s).asScala.toList
-      .map(t => pattern.replaceAllIn(t.asInstanceOf[String].toLowerCase(), ""))
-      .filter(_.length != 0)
+  @Test def testScalaTokenization {
+    val tokenizer = new MockTokenizer()
+
+    for (i <- 0 until io.bespin.java.util.TokenizerTest.EXAMPLES.length ) {
+      assertEquals(io.bespin.java.util.TokenizerTest.EXPECTED.get(i).toList,
+        tokenizer.tokenize(io.bespin.java.util.TokenizerTest.EXAMPLES(i)))
+    }
   }
 }
+

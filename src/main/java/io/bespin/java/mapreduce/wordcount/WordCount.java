@@ -16,6 +16,7 @@
 
 package io.bespin.java.mapreduce.wordcount;
 
+import io.bespin.java.util.Tokenizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -41,7 +42,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 /**
  * Simple word count demo.
@@ -58,33 +58,29 @@ public class WordCount extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = value.toString();
-      StringTokenizer itr = new StringTokenizer(line);
-      while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
-        if (w.length() == 0) continue;
-        WORD.set(w);
+      for (String word : Tokenizer.tokenize(value.toString())) {
+        WORD.set(word);
         context.write(WORD, ONE);
       }
     }
   }
 
   public static final class MyMapperIMC extends Mapper<LongWritable, Text, Text, IntWritable> {
-    private final HashMap<String, Integer> counts = new HashMap<>();
+    private Map<String, Integer> counts;
+
+    @Override
+    public void setup(Context context) throws IOException, InterruptedException {
+      counts = new HashMap<>();
+    }
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      String line = value.toString();
-      StringTokenizer itr = new StringTokenizer(line);
-      while (itr.hasMoreTokens()) {
-        String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
-        if (w.length() == 0) continue;
-
-        if (counts.containsKey(w)) {
-          counts.put(w, counts.get(w)+1);
+      for (String word : Tokenizer.tokenize(value.toString())) {
+        if (counts.containsKey(word)) {
+          counts.put(word, counts.get(word)+1);
         } else {
-          counts.put(w, 1);
+          counts.put(word, 1);
         }
       }
     }
