@@ -53,12 +53,36 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     }
   }
 
+  // Same as above, except using explicit loops to look more like pseudo-code
+  class AlternativeMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      for (word <- tokenize(value)) {
+        context.write(word, 1)
+      }
+    }
+  }
+
   class MyMapperHistogram extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text,
                      context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
       val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
       tokenize(value).foreach(word => counts(word) += 1)
       counts.foreach({ case (k, v) => context.write(k, v) })
+    }
+  }
+
+  // Same as above, except using explicit loops to look more like pseudo-code
+  class AlternativeMapperHistogram extends Mapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
+      for (word <- tokenize(value)) {
+        counts(word) += 1
+      }
+      for ((k, v) <- counts) {
+        context.write(k, v)
+      }
     }
   }
 
@@ -72,6 +96,24 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
 
     override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
       counts.foreach({ case (k, v) => context.write(k, v) })
+    }
+  }
+
+  // Same as above, except using explicit loops to look more like pseudo-code
+  class AlternativeMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
+    val counts = new HashMap[String, Int]().withDefaultValue(0)
+
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      for (word <- tokenize(value)) {
+        counts(word) += 1
+      }
+    }
+
+    override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      for ((k, v) <- counts) {
+        context.write(k, v)
+      }
     }
   }
 
