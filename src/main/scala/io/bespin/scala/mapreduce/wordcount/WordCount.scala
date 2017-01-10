@@ -19,8 +19,6 @@ package io.bespin.scala.mapreduce.wordcount
 import io.bespin.scala.util.Tokenizer
 import io.bespin.scala.util.WritableConversions
 
-import java.util.StringTokenizer
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
 
@@ -41,11 +39,12 @@ class Conf(args: Seq[String]) extends ScallopConf(args) {
   val output = opt[String](descr = "output path", required = true)
   val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
   val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
+  val histogram = opt[Boolean](descr = "build histogram in mapper", required = false)
   verify()
 }
 
 object WordCount extends Configured with Tool with WritableConversions with Tokenizer {
-  val log = Logger.getLogger(getClass().getName())
+  val log = Logger.getLogger(getClass.getName)
 
   class MyMapper extends Mapper[LongWritable, Text, Text, IntWritable] {
     override def map(key: LongWritable, value: Text,
@@ -54,12 +53,21 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     }
   }
 
+  class MyMapperHistogram extends Mapper[LongWritable, Text, Text, IntWritable] {
+    override def map(key: LongWritable, value: Text,
+                     context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
+      val counts = new HashMap[String, Int]() { override def default(key: String) = 0 }
+      tokenize(value).foreach(word => counts(word) += 1)
+      counts.foreach({ case (k, v) => context.write(k, v) })
+    }
+  }
+
   class MyMapperIMC extends Mapper[LongWritable, Text, Text, IntWritable] {
     val counts = new HashMap[String, Int]().withDefaultValue(0)
 
     override def map(key: LongWritable, value: Text,
                      context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
-      tokenize(value).foreach(word => counts.put(word, counts(word) + 1))
+      tokenize(value).foreach(word => counts(word) += 1)
     }
 
     override def cleanup(context: Mapper[LongWritable, Text, Text, IntWritable]#Context) = {
@@ -95,6 +103,8 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     log.info("Output: " + args.output())
     log.info("Number of reducers: " + args.reducers())
     log.info("Use in-mapper combining: " + args.imc())
+    log.info("Use in-mapper histogram: " + args.histogram())
+
 
     val conf = getConf()
     val job = Job.getInstance(conf)
@@ -111,7 +121,8 @@ object WordCount extends Configured with Tool with WritableConversions with Toke
     job.setOutputValueClass(classOf[IntWritable])
     job.setOutputFormatClass(classOf[TextOutputFormat[Text, IntWritable]])
 
-    job.setMapperClass(if (args.imc()) classOf[MyMapperIMC] else classOf[MyMapper])
+    job.setMapperClass(if (args.imc()) classOf[MyMapperIMC] else
+      if (args.histogram()) classOf[MyMapperHistogram] else classOf[MyMapper])
     job.setCombinerClass(classOf[MyReducer])
     job.setReducerClass(classOf[MyReducer])
 
