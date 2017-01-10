@@ -61,8 +61,8 @@ object ComputeMeanV4 extends Configured with Tool with WritableConversions with 
 
     override def map(key: Text, value: Text,
                      context: Mapper[Text, Text, Text, PairOfLongs]#Context) = {
-      sums.put(key, sums(key) + value.toString.toLong)
-      counts.put(key, counts(key) + 1L)
+      sums(key) += value.toString.toLong
+      counts(key) += 1
     }
 
     override def cleanup(context: Mapper[Text, Text, Text, PairOfLongs]#Context) = {
