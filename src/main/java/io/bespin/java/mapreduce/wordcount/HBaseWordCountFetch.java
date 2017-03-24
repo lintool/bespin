@@ -20,11 +20,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -75,8 +76,8 @@ public class HBaseWordCountFetch extends Configured implements Tool {
     conf.addResource(new Path(args.config));
 
     Configuration hbaseConfig = HBaseConfiguration.create(conf);
-    HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
-    HTableInterface table = hbaseConnection.getTable(args.table);
+    Connection connection = ConnectionFactory.createConnection(hbaseConfig);
+    Table table = connection.getTable(TableName.valueOf(args.table));
 
     Get get = new Get(Bytes.toBytes(args.term));
     Result result = table.get(get);

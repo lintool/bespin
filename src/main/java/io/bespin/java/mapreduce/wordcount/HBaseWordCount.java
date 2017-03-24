@@ -23,7 +23,9 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
@@ -61,7 +63,7 @@ public class HBaseWordCount extends Configured implements Tool {
         sum += val.get();
       }
       Put put = new Put(Bytes.toBytes(key.toString()));
-      put.add(CF, COUNT, Bytes.toBytes(sum));
+      put.addColumn(CF, COUNT, Bytes.toBytes(sum));
 
       context.write(null, put);
     }
@@ -112,14 +114,15 @@ public class HBaseWordCount extends Configured implements Tool {
     conf.addResource(new Path(args.config));
 
     Configuration hbaseConfig = HBaseConfiguration.create(conf);
-    HBaseAdmin admin = new HBaseAdmin(hbaseConfig);
+    Connection connection = ConnectionFactory.createConnection(hbaseConfig);
+    Admin admin = connection.getAdmin();
 
-    if (admin.tableExists(args.table)) {
+    if (admin.tableExists(TableName.valueOf(args.table))) {
       LOG.info(String.format("Table '%s' exists: dropping table and recreating.", args.table));
       LOG.info(String.format("Disabling table '%s'", args.table));
-      admin.disableTable(args.table);
+      admin.disableTable(TableName.valueOf(args.table));
       LOG.info(String.format("Droppping table '%s'", args.table));
-      admin.deleteTable(args.table);
+      admin.deleteTable(TableName.valueOf(args.table));
     }
 
     HTableDescriptor tableDesc = new HTableDescriptor(TableName.valueOf(args.table));
