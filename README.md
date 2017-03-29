@@ -217,24 +217,24 @@ done
 
 The MapReduce job counters tell you how many nodes are reachable at each iteration:
 
-Iteration |  Reachable | Distance
----------:|-----------:|--------:
-        0 |          1 |       1
-        1 |          9 |       8
-        2 |         65 |      56
-        3 |        257 |     192
-        4 |        808 |     551
-        5 |       1934 |    1126
-        6 |       3479 |    1545
-        7 |       4790 |    1311
-        8 |       5444 |     654
-        9 |       5797 |     353
-       10 |       5920 |     123
-       11 |       5990 |      70
-       12 |       6018 |      28
-       13 |       6026 |       8
-       14 |       6028 |       2
-       15 |       6028 |       0
+|Iteration |  Reachable | Distance
+|---------:|-----------:|--------:
+|        0 |          1 |       1
+|        1 |          9 |       8
+|        2 |         65 |      56
+|        3 |        257 |     192
+|        4 |        808 |     551
+|        5 |       1934 |    1126
+|        6 |       3479 |    1545
+|        7 |       4790 |    1311
+|        8 |       5444 |     654
+|        9 |       5797 |     353
+|       10 |       5920 |     123
+|       11 |       5990 |      70
+|       12 |       6018 |      28
+|       13 |       6026 |       8
+|       14 |       6028 |       2
+|       15 |       6028 |       0
 
 To find all the nodes that are reachable at a particular iteration, run the following job:
 
