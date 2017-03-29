@@ -160,6 +160,9 @@ public class ComputeMeanV3 extends Configured implements Tool {
 
   /**
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+   *
+   * @param args command-line arguments
+   * @throws Exception if tool encounters an exception
    */
   public static void main(String[] args) throws Exception {
     ToolRunner.run(new ComputeMeanV3(), args);

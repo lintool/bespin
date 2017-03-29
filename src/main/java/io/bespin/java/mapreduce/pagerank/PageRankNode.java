@@ -91,6 +91,7 @@ public class PageRankNode implements Writable {
    * Deserializes this object.
    *
    * @param in source for raw byte representation
+   * @throws IOException if any exception is encountered during object deserialization
    */
   @Override
   public void readFields(DataInput in) throws IOException {
@@ -115,6 +116,7 @@ public class PageRankNode implements Writable {
    * Serializes this object.
    *
    * @param out where to write the raw byte representation
+   * @throws IOException if any exception is encountered during object serialization
    */
   @Override
   public void write(DataOutput out) throws IOException {
@@ -143,7 +145,7 @@ public class PageRankNode implements Writable {
    * Returns the serialized representation of this object as a byte array.
    *
    * @return byte array representing the serialized representation of this object
-   * @throws IOException
+   * @throws IOException if any exception is encountered during object serialization
    */
   public byte[] serialize() throws IOException {
     ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
@@ -158,7 +160,7 @@ public class PageRankNode implements Writable {
    *
    * @param in source for reading the serialized representation
    * @return newly-created object
-   * @throws IOException
+   * @throws IOException if any exception is encountered during object deserialization
    */
   public static PageRankNode create(DataInput in) throws IOException {
     PageRankNode m = new PageRankNode();
@@ -172,7 +174,7 @@ public class PageRankNode implements Writable {
    *
    * @param bytes raw serialized representation
    * @return newly-created object
-   * @throws IOException
+   * @throws IOException if any exception is encountered during object deserialization
    */
   public static PageRankNode create(byte[] bytes) throws IOException {
     return create(new DataInputStream(new ByteArrayInputStream(bytes)));
