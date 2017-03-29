@@ -29,7 +29,7 @@ The datasets are stored in the [Bespin data repo](https://github.com/lintool/bes
 Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running word count in Java MapReduce:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.wordcount.WordCount \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.wordcount.WordCount \
    -input data/Shakespeare.txt -output wc-jmr-combiner
 ```
 
@@ -38,7 +38,7 @@ To enable the "in-mapper combining" optimization, use the `-imc` option.
 Running word count in Scala MapReduce:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.scala.mapreduce.wordcount.WordCount \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.scala.mapreduce.wordcount.WordCount \
    --input data/Shakespeare.txt --output wc-smr-combiner
 ```
 
@@ -47,7 +47,7 @@ To enable the "in-mapper combining" optimization, use the `--imc` option.
 And finally, running word count in Spark:
 
 ```
-$ spark-submit --class io.bespin.scala.spark.wordcount.WordCount target/bespin-0.1.0-SNAPSHOT.jar \
+$ spark-submit --class io.bespin.scala.spark.wordcount.WordCount target/bespin-1.0.1-SNAPSHOT-fatjar.jar \
     --input data/Shakespeare.txt --output wc-spark-default
 ```
 
@@ -70,21 +70,21 @@ $ diff counts.jmr.combiner.txt counts.spark.default.txt
 Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running a simple bigram count:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.BigramCount \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bigram.BigramCount \
    -input data/Shakespeare.txt -output bigram-count
 ```
 
 Computing bigram relative frequencies using the "pairs" implementation:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyPairs \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyPairs \
    -input data/Shakespeare.txt -output bigram-freq-mr-pairs -textOutput
 ```
 
 Computing bigram relative frequencies using the "stripes" implementation:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyStripes \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bigram.ComputeBigramRelativeFrequencyStripes \
    -input data/Shakespeare.txt -output bigram-freq-mr-stripes -textOutput
 ```
 
@@ -136,14 +136,14 @@ $ diff freq.mr.stripes.txt freq.mr.pairs.txt
 Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Running the "pairs" implementation:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixPairs \
    -input data/Shakespeare.txt -output cooccur-pairs -window 2
 ```
 
 Running the "stripes" implementation:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.cooccur.ComputeCooccurrenceMatrixStripes \
    -input data/Shakespeare.txt -output cooccur-stripes -window 2
 ```
 
@@ -166,21 +166,21 @@ $ hadoop fs -cat cooccur-stripes/part* | awk '/^dream\t/'
 Make sure you've downloaded the Shakespeare collection (see "Getting Started" above). Building the inverted index:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BuildInvertedIndex \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.search.BuildInvertedIndex \
    -input data/Shakespeare.txt -output index
 ```
 
 Looking up an individual postings list:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.LookupPostings \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.search.LookupPostings \
    -index index -collection data/Shakespeare.txt -term "star-cross'd"
 ```
 
 Running a boolean retrieval:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.search.BooleanRetrieval \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.search.BooleanRetrieval \
    -index index -collection data/Shakespeare.txt -query "white red OR rose AND pluck AND"
 ```
 
@@ -191,14 +191,14 @@ Note that the query must be in [Reverse Polish notation](https://en.wikipedia.or
 Make sure you've grabbed the sample graph data (see "Getting Started" above). First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.EncodeBfsGraph \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.EncodeBfsGraph \
    -input data/p2p-Gnutella08-adj.txt -output graph-BFS/iter0000 -src 367
 ```
 
 In the current implementation, you have to run a MapReduce job for every iteration, like this:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.IterateBfs \
    -input graph-BFS/iter0000 -output graph-BFS/iter0001 -partitions 5
 ```
 
@@ -211,7 +211,7 @@ for i in `seq 0 14`; do
   cur=`echo $i | awk '{printf "%04d\n", $0;}'`
   next=`echo $(($i+1)) | awk '{printf "%04d\n", $0;}'`
   echo "Iteration $i: reading graph-BFS/iter$cur, writing: graph-BFS/iter$next"
-  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter$cur" -output "graph-BFS/iter$next" -partitions 5
+  hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.IterateBfs -input "graph-BFS/iter$cur" -output "graph-BFS/iter$next" -partitions 5
 done
 ```
 
@@ -239,7 +239,7 @@ Iteration |  Reachable | Distance
 To find all the nodes that are reachable at a particular iteration, run the following job:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindReachableNodes \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.FindReachableNodes \
    -input graph-BFS/iter0005 -output graph-BFS/reachable-iter0005
 
 $ hadoop fs -cat 'graph-BFS/reachable-iter0005/part*' | wc
@@ -250,7 +250,7 @@ These values should be the same as those in the second column of the table above
 To find all the nodes that are at a particular distance (e.g., the search frontier), run the following job:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance \
    -input graph-BFS/iter0005 -output graph-BFS/d0005 -distance 5
 
 $ hadoop fs -cat 'graph-BFS/d0005/part*' | wc
@@ -266,7 +266,7 @@ Here's a simple bash script for iterating through the reachability jobs:
 for i in `seq 0 15`; do
   cur=`echo $i | awk '{printf "%04d\n", $0;}'`
   echo "Iteration $i: reading graph-BFS/iter$cur"
-  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindReachableNodes -input graph-BFS/iter$cur -output graph-BFS/reachable-iter$cur
+  hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.FindReachableNodes -input graph-BFS/iter$cur -output graph-BFS/reachable-iter$cur
 done
 ```
 
@@ -278,7 +278,7 @@ Here's a simple bash script for extracting nodes at each distance:
 for i in `seq 0 15`; do
   cur=`echo $i | awk '{printf "%04d\n", $0;}'`
   echo "Iteration $i: reading graph-BFS/iter$cur"
-  hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance -input graph-BFS/iter$cur -output graph-BFS/d$cur -distance $i
+  hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.bfs.FindNodeAtDistance -input graph-BFS/iter$cur -output graph-BFS/d$cur -distance $i
 done
 ```
 
@@ -287,7 +287,7 @@ done
 Make sure you've grabbed the sample graph data (see "Getting Started" above). First, convert the plain-text adjacency list representation into Hadoop `Writable` records:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.BuildPageRankRecords \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.pagerank.BuildPageRankRecords \
    -input data/p2p-Gnutella08-adj.txt -output graph-PageRankRecords -numNodes 6301
 ```
 
@@ -300,21 +300,21 @@ $ hadoop fs -mkdir graph-PageRank
 Partition the graph:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.PartitionGraph \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.pagerank.PartitionGraph \
    -input graph-PageRankRecords -output graph-PageRank/iter0000 -numPartitions 5 -numNodes 6301
 ```
 
 Run 15 iterations:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.RunPageRankBasic \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.pagerank.RunPageRankBasic \
    -base graph-PageRank -numNodes 6301 -start 0 -end 15 -useCombiner
 ```
 
 Extract the top 20 nodes by PageRank value and examine the results:
 
 ```
-$ hadoop jar target/bespin-0.1.0-SNAPSHOT.jar io.bespin.java.mapreduce.pagerank.FindMaxPageRankNodes \
+$ hadoop jar target/bespin-1.0.1-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.pagerank.FindMaxPageRankNodes \
    -input graph-PageRank/iter0015 -output graph-PageRank-top20 -top 20
 
 $ hadoop fs -cat graph-PageRank-top20/part-r-00000
