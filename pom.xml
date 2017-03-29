@@ -7,7 +7,7 @@
   <artifactId>bespin</artifactId>
   <packaging>jar</packaging>
   <name>Bespin</name>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <description>Code for the big data course at the University of Waterloo.</description>
   <url>http://bespin.io/</url>
   <licenses>
@@ -29,6 +29,13 @@
       <email>jimmylin@uwaterloo.ca</email>
     </developer>
   </developers>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <repositories>
     <repository>
@@ -57,7 +64,6 @@
           <target>1.7</target>
         </configuration>
       </plugin>
-
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
@@ -93,6 +99,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <finalName>${project.artifactId}-${project.version}-fatjar</finalName>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <!-- This is an Mac OSX issue because the default filesystem is case-insensitive,
                    so multiple versions of files (w/ different cases) clash when Hadoop tries
@@ -113,6 +120,59 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.2.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -184,6 +244,11 @@
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.11</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.11</artifactId>
       <version>${spark.version}</version>
     </dependency>
   </dependencies>
