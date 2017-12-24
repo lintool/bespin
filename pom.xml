@@ -7,7 +7,7 @@
   <artifactId>bespin</artifactId>
   <packaging>jar</packaging>
   <name>Bespin</name>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <description>Code for the big data course at the University of Waterloo.</description>
   <url>http://bespin.io/</url>
   <licenses>
@@ -48,9 +48,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <scala.version>2.11.8</scala.version>
-    <hbase.version>1.2.4</hbase.version>
-    <hadoop.version>2.7.2</hadoop.version>
-    <spark.version>2.0.2</spark.version>
+    <hbase.version>1.2.6</hbase.version>
+    <hadoop.version>2.7.4</hadoop.version>
+    <spark.version>2.1.1</spark.version>
   </properties>
 
   <build>
@@ -58,10 +58,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.6.0</version>
+        <version>3.7.0</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -91,7 +91,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -124,7 +124,7 @@
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
+        <version>1.6.8</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
@@ -135,7 +135,7 @@
        <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>3.0.1</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -148,7 +148,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>3.0.0</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -161,7 +161,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.5</version>
+        <version>1.6</version>
         <executions>
           <execution>
             <id>sign-artifacts</id>
@@ -209,7 +209,6 @@
       <artifactId>lintools-datatypes</artifactId>
       <version>1.0.0</version>
     </dependency>
-
     <dependency>
       <groupId>net.sf.jung</groupId>
       <artifactId>jung-api</artifactId>
@@ -228,18 +227,22 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>20.0</version>
+      <version>23.6-jre</version>
     </dependency>
-
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>3.0.4</version>
+    </dependency>
+    <dependency>
       <groupId>org.rogach</groupId>
       <artifactId>scallop_2.11</artifactId>
-      <version>2.0.5</version>
+      <version>3.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
