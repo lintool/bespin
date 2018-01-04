@@ -7,7 +7,7 @@
   <artifactId>bespin</artifactId>
   <packaging>jar</packaging>
   <name>Bespin</name>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.0.1</version>
   <description>Code for the big data course at the University of Waterloo.</description>
   <url>http://bespin.io/</url>
   <licenses>
