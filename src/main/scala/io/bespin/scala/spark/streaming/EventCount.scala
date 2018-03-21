@@ -28,7 +28,7 @@ import org.rogach.scallop._
 
 import scala.collection.mutable
 
-class StreamingExampleConf(args: Seq[String]) extends ScallopConf(args) {
+class EventCountConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, checkpoint, output)
   val input = opt[String](descr = "input path", required = true)
   val checkpoint = opt[String](descr = "checkpoint path", required = true)
@@ -36,18 +36,18 @@ class StreamingExampleConf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
-object StreamingExample {
+object EventCount {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]): Unit = {
-    val args = new StreamingExampleConf(argv)
+    val args = new EventCountConf(argv)
 
     log.info("Input: " + args.input())
 
     val spark = SparkSession
       .builder()
       .config("spark.streaming.clock", "org.apache.spark.util.ManualClock")
-      .appName("StreamingExample")
+      .appName("EventCount")
       .getOrCreate()
 
     val numCompletedRDDs = spark.sparkContext.longAccumulator("number of completed RDDs")
