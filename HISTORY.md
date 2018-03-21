@@ -1,3 +1,9 @@
+Version 1.0.2
+=============
+March 21, 2018
+
++ Added Spark Streaming EventCount example.
+
 Version 1.0.1
 =============
 January 3, 2018
