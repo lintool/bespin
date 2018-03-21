@@ -1,3 +1,9 @@
+Version 1.0.3
+=============
+March 21, 2018
+
++ Minor tweak to `pom.xm`, we want Spark Streaming to be pulled in transitively.
+
 Version 1.0.2
 =============
 March 21, 2018
