@@ -68,7 +68,7 @@ public class IterateBfs extends Configured implements Tool {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(BfsNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
@@ -80,7 +80,7 @@ public class IterateBfs extends Configured implements Tool {
       // Retain distance to self.
       map.put(nid.get(), node.getDistance());
 
-      ArrayListOfInts adj = node.getAdjacenyList();
+      ArrayListOfInts adj = node.getAdjacencyList();
       int dist = node.getDistance() + 1;
       // Keep track of shortest distance to neighbors.
       for (int i = 0; i < adj.size(); i++) {
@@ -130,7 +130,7 @@ public class IterateBfs extends Configured implements Tool {
 
         if (n.getType() == BfsNode.Type.Structure) {
           // This is the structure; update accordingly.
-          ArrayListOfIntsWritable list = n.getAdjacenyList();
+          ArrayListOfIntsWritable list = n.getAdjacencyList();
           structureReceived++;
 
           int arr[] = new int[list.size()];

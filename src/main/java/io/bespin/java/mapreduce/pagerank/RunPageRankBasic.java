@@ -97,16 +97,16 @@ public class RunPageRankBasic extends Configured implements Tool {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(PageRankNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
       int massMessages = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         context.getCounter(PageRank.edges).increment(list.size());
@@ -152,7 +152,7 @@ public class RunPageRankBasic extends Configured implements Tool {
       // Pass along node structure.
       intermediateStructure.setNodeId(node.getNodeId());
       intermediateStructure.setType(PageRankNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
+      intermediateStructure.setAdjacencyList(node.getAdjacencyList());
 
       context.write(nid, intermediateStructure);
 
@@ -160,9 +160,9 @@ public class RunPageRankBasic extends Configured implements Tool {
       int massMessagesSaved = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         context.getCounter(PageRank.edges).increment(list.size());
@@ -268,7 +268,7 @@ public class RunPageRankBasic extends Configured implements Tool {
 
         if (n.getType().equals(PageRankNode.Type.Structure)) {
           // This is the structure; update accordingly.
-          ArrayListOfIntsWritable list = n.getAdjacenyList();
+          ArrayListOfIntsWritable list = n.getAdjacencyList();
           structureReceived++;
 
           node.setAdjacencyList(list);

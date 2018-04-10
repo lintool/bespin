@@ -101,9 +101,9 @@ public class RunPageRankSchimmy extends Configured implements Tool {
       int massMessages = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         // Iterate over neighbors.
@@ -135,9 +135,9 @@ public class RunPageRankSchimmy extends Configured implements Tool {
       int massMessagesSaved = 0;
 
       // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
+      if (node.getAdjacencyList().size() > 0) {
         // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
+        ArrayListOfIntsWritable list = node.getAdjacencyList();
         float mass = node.getPageRank() - (float) StrictMath.log(list.size());
 
         // Iterate over neighbors.
