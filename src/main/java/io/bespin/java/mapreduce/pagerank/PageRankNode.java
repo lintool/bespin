@@ -51,7 +51,7 @@ public class PageRankNode implements Writable {
   private Type type;
   private int nodeid;
   private float pagerank;
-  private ArrayListOfIntsWritable adjacenyList;
+  private ArrayListOfIntsWritable adjacencyList;
 
   public PageRankNode() {}
 
@@ -71,12 +71,12 @@ public class PageRankNode implements Writable {
     this.nodeid = n;
   }
 
-  public ArrayListOfIntsWritable getAdjacenyList() {
-    return adjacenyList;
+  public ArrayListOfIntsWritable getAdjacencyList() {
+    return adjacencyList;
   }
 
   public void setAdjacencyList(ArrayListOfIntsWritable list) {
-    this.adjacenyList = list;
+    this.adjacencyList = list;
   }
 
   public Type getType() {
@@ -108,8 +108,8 @@ public class PageRankNode implements Writable {
       pagerank = in.readFloat();
     }
 
-    adjacenyList = new ArrayListOfIntsWritable();
-    adjacenyList.readFields(in);
+    adjacencyList = new ArrayListOfIntsWritable();
+    adjacencyList.readFields(in);
   }
 
   /**
@@ -132,13 +132,13 @@ public class PageRankNode implements Writable {
       out.writeFloat(pagerank);
     }
 
-    adjacenyList.write(out);
+    adjacencyList.write(out);
   }
 
   @Override
   public String toString() {
-    return String.format("{%d %.4f %s}", nodeid, pagerank, (adjacenyList == null ? "[]"
-        : adjacenyList.toString(10)));
+    return String.format("{%d %.4f %s}", nodeid, pagerank, (adjacencyList == null ? "[]"
+        : adjacencyList.toString(10)));
   }
 
   /**
