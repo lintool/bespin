@@ -1,5 +1,7 @@
 # Bespin
 
+[![Build Status](https://travis-ci.org/lintool/bespin.svg?branch=master)](https://travis-ci.org/lintool/bespin)
+
 Bespin is a library that contains reference implementations of "big data" algorithms in MapReduce and Spark.
 
 ## Getting Started
