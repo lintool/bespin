@@ -207,7 +207,7 @@
     <dependency>
       <groupId>tl.lin</groupId>
       <artifactId>lintools-datatypes</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>net.sf.jung</groupId>

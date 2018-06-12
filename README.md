@@ -1,6 +1,8 @@
 # Bespin
 
 [![Build Status](https://travis-ci.org/lintool/bespin.svg?branch=master)](https://travis-ci.org/lintool/bespin)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.bespin/bespin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.bespin/bespin)
+[![LICENSE](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](../LICENSE)
 
 Bespin is a library that contains reference implementations of "big data" algorithms in MapReduce and Spark.
 
