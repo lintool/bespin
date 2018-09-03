@@ -1,3 +1,9 @@
+Version 1.0.4
+=============
+September 2, 2018
+
++ Updated versions of Hadoop and Spark for CS 451/651 Fall 2018 offering.
+
 Version 1.0.3
 =============
 March 21, 2018
@@ -15,7 +21,6 @@ Version 1.0.1
 January 3, 2018
 
 + Updated dependency versions for CS 451/651 Winter 2018 offering.
-
 
 Version 1.0.0
 =============
